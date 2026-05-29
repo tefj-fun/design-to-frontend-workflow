@@ -1,0 +1,4 @@
+interface:
+  display_name: "Design to Frontend Workflow"
+  short_description: "Turn visual designs into verified frontend code"
+  default_prompt: "Use $design-to-frontend-workflow to turn this mockup or screenshot into a practical frontend implementation workflow."

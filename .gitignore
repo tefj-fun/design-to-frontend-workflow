@@ -1,0 +1,15 @@
+node_modules/
+npm-debug.log*
+.DS_Store
+.env
+.env.*
+tmp/
+dist/
+coverage/
+reports/
+*.diff.png
+*.actual.png
+*.candidate.png
+*.reference.png
+playwright-report/
+test-results/
