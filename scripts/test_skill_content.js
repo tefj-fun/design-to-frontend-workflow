@@ -61,6 +61,9 @@ const requiredSkillSections = [
   'scripts/visual_readiness_report.js',
   '--max-ui-mismatch',
   'evidence-freshness',
+  '--require-ledger',
+  '--require-interactions',
+  '--require-ocr',
 ];
 
 for (const text of requiredSkillSections) {
@@ -85,6 +88,9 @@ const requiredReadmeSections = [
   '--manifest interactions.json',
   '--score score.json',
   '--max-ui-mismatch',
+  '--require-ledger',
+  '--require-interactions',
+  '--require-ocr',
   '--source region-source.json',
   'The JSON summary includes `fullPageMismatch`, `uiMaskedMismatch`, `regionMismatch[]`, `regionGeometry[]`, and `localCropMismatch` when the relevant manifests are supplied.',
 ];

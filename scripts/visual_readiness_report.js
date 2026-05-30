@@ -116,6 +116,15 @@ function checkEvidenceFreshness(options) {
   });
 }
 
+function checkRequiredPath(name, label, filePath) {
+  if (!filePath) {
+    return fail(name, `${label} is required but no path was provided`);
+  }
+  return pass(name, {
+    path: path.resolve(filePath),
+  });
+}
+
 function checkScoreSanity(score) {
   const failures = [];
   const sanity = score.sanity || {};
@@ -221,6 +230,15 @@ function buildReadinessReport(options) {
     checkThreshold(score, options),
   ];
 
+  if (options.requireLedger) {
+    checks.push(checkRequiredPath("required-ledger", "ledger", options.ledger));
+  }
+  if (options.requireInteractions) {
+    checks.push(checkRequiredPath("required-interactions", "interaction summary", options.interactionSummary));
+  }
+  if (options.requireOcr) {
+    checks.push(checkRequiredPath("required-ocr", "OCR summary", options.ocrSummary));
+  }
   if (options.ledger) {
     checks.push(checkLedgerEvidence(options.ledger));
   }
@@ -257,6 +275,9 @@ function main() {
     ocrSummary: args["ocr-summary"] || null,
     maxUiMismatch: parseOptionalNumber(args["max-ui-mismatch"], "max-ui-mismatch"),
     maxFullMismatch: parseOptionalNumber(args["max-full-mismatch"], "max-full-mismatch"),
+    requireLedger: Boolean(args["require-ledger"]),
+    requireInteractions: Boolean(args["require-interactions"]),
+    requireOcr: Boolean(args["require-ocr"]),
     requireRegions: Boolean(args["require-regions"]),
   });
 
@@ -278,6 +299,7 @@ module.exports = {
   checkEvidenceFreshness,
   checkLedgerEvidence,
   checkRegionDiagnostics,
+  checkRequiredPath,
   checkScoreSanity,
   checkSummaryJson,
   checkThreshold,

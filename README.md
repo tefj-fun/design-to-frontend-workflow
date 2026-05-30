@@ -384,10 +384,13 @@ node scripts/visual_readiness_report.js \
   --interaction-summary interaction-summary.json \
   --ocr-summary ocr-summary.json \
   --max-ui-mismatch 3 \
+  --require-ledger \
+  --require-interactions \
+  --require-ocr \
   --require-regions
 ```
 
-The report validates artifact freshness, optional `evidence-freshness` for supplied ledger/interaction/OCR files when `--newer-than` or `--min-mtime` is present, score invariants, optional mismatch thresholds, ledger discipline, optional interaction/OCR summary JSON with `ok: true`, and component-region diagnostics. Use it as the final evidence gate for long-running benchmark, release-polish, or pixel-critical work so one stale or missing artifact cannot be hidden behind a single green score.
+The report validates artifact freshness, optional `evidence-freshness` for supplied ledger/interaction/OCR files when `--newer-than` or `--min-mtime` is present, score invariants, optional mismatch thresholds, ledger discipline, optional interaction/OCR summary JSON with `ok: true`, and component-region diagnostics. Use `--require-ledger`, `--require-interactions`, `--require-ocr`, and `--require-regions` for strict final gates so omitted evidence fails explicitly instead of being treated as not applicable.
 
 ### `visual_region_manifest.js`
 

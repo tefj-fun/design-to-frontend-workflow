@@ -77,6 +77,13 @@ function runReadiness(script, paths) {
   });
 }
 
+function runReadinessArgs(script, args) {
+  return spawnSync(process.execPath, [script, ...args], {
+    encoding: "utf8",
+    env: process.env,
+  });
+}
+
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "visual-readiness-report-test-"));
 const paths = {
   reference: path.join(tmp, "reference.png"),
@@ -133,6 +140,52 @@ assert.deepEqual(
     "region-diagnostics",
   ],
 );
+
+const missingInteraction = runReadinessArgs(script, [
+  "--score",
+  paths.score,
+  "--newer-than",
+  paths.source,
+  "--max-ui-mismatch",
+  "3",
+  "--require-interactions",
+]);
+assert.notEqual(missingInteraction.status, 0);
+assert.match(missingInteraction.stderr, /required-interactions/i);
+
+const noRegionScore = path.join(tmp, "score-no-regions.json");
+fs.writeFileSync(noRegionScore, JSON.stringify({
+  reference: paths.reference,
+  candidate: paths.candidate,
+  diff: paths.diff,
+  width: 2,
+  height: 1,
+  fullPageMismatch: 2.5,
+  uiMaskedMismatch: 1.5,
+  sanity: {
+    dimensionsMatch: true,
+    scoreInvariantOk: true,
+    regionCount: 0,
+  },
+  regionMismatch: [],
+}, null, 2));
+touch(noRegionScore, freshTime);
+
+const missingStrictEvidence = runReadinessArgs(script, [
+  "--score",
+  noRegionScore,
+  "--newer-than",
+  paths.source,
+  "--max-ui-mismatch",
+  "3",
+  "--require-ledger",
+  "--require-ocr",
+  "--require-regions",
+]);
+assert.notEqual(missingStrictEvidence.status, 0);
+assert.match(missingStrictEvidence.stderr, /required-ledger/i);
+assert.match(missingStrictEvidence.stderr, /required-ocr/i);
+assert.match(missingStrictEvidence.stderr, /region-diagnostics/i);
 
 writeScore(paths.score, paths, 4.5);
 touch(paths.score, freshTime);
