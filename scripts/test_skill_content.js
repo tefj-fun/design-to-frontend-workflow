@@ -60,6 +60,7 @@ const requiredSkillSections = [
   'scripts/visual_artifact_check.js',
   'scripts/visual_readiness_report.js',
   '--max-ui-mismatch',
+  'evidence-freshness',
 ];
 
 for (const text of requiredSkillSections) {
@@ -79,6 +80,7 @@ const requiredReadmeSections = [
   'scripts/visual_interaction_check.js',
   'scripts/visual_artifact_check.js',
   'scripts/visual_readiness_report.js',
+  'evidence-freshness',
   '--ledger visual-workflow-ledger.md',
   '--manifest interactions.json',
   '--score score.json',

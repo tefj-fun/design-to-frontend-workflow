@@ -5,10 +5,12 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { parseArgs } = require("./visual_compare");
 const {
+  baselineFromOptions,
   checkArtifacts,
   formatFailures,
   readScore,
   splitList,
+  statIfExists,
 } = require("./visual_artifact_check");
 const { checkLedger } = require("./visual_ledger_check");
 
@@ -60,6 +62,57 @@ function checkArtifactFreshness(options) {
   return pass("artifact-freshness", {
     artifactCount: summary.artifacts.length,
     baseline: summary.baseline,
+  });
+}
+
+function optionalEvidencePaths(options) {
+  return [
+    ["ledger", options.ledger],
+    ["interaction-summary", options.interactionSummary],
+    ["ocr-summary", options.ocrSummary],
+  ].filter(([, filePath]) => Boolean(filePath));
+}
+
+function checkEvidenceFreshness(options) {
+  const evidencePaths = optionalEvidencePaths(options);
+  if (!evidencePaths.length) return null;
+  const baseline = baselineFromOptions({
+    newerThan: options.newerThan,
+    minMtime: options.minMtime,
+  });
+  if (!baseline) return null;
+
+  const evidence = evidencePaths.map(([role, filePath]) => {
+    const resolved = path.resolve(filePath);
+    const stat = statIfExists(resolved);
+    const exists = Boolean(stat);
+    const mtimeMs = exists ? stat.mtimeMs : null;
+    return {
+      role,
+      path: resolved,
+      exists,
+      mtimeMs,
+      mtime: exists ? new Date(mtimeMs).toISOString() : null,
+      stale: exists ? mtimeMs < baseline.mtimeMs : false,
+    };
+  });
+  const missing = evidence.filter((item) => !item.exists);
+  const stale = evidence.filter((item) => item.stale);
+  if (missing.length || stale.length) {
+    const messages = [
+      ...missing.map((item) => `${item.role} is missing: ${item.path}`),
+      ...stale.map((item) => `${item.role} is stale: ${item.path}`),
+    ];
+    return fail("evidence-freshness", messages.join("; "), {
+      baseline,
+      evidence,
+      missing,
+      stale,
+    });
+  }
+  return pass("evidence-freshness", {
+    baseline,
+    evidence,
   });
 }
 
@@ -160,8 +213,10 @@ function checkRegionDiagnostics(score) {
 function buildReadinessReport(options) {
   const scorePath = path.resolve(options.score);
   const score = readScore(scorePath);
+  const evidenceFreshness = checkEvidenceFreshness(options);
   const checks = [
     checkArtifactFreshness(options),
+    ...(evidenceFreshness ? [evidenceFreshness] : []),
     checkScoreSanity(score),
     checkThreshold(score, options),
   ];
@@ -220,6 +275,7 @@ function main() {
 module.exports = {
   buildReadinessReport,
   checkArtifactFreshness,
+  checkEvidenceFreshness,
   checkLedgerEvidence,
   checkRegionDiagnostics,
   checkScoreSanity,

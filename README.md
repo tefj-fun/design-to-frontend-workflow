@@ -32,7 +32,7 @@ This skill makes the workflow explicit. It asks the agent to inventory the desig
 - `references/benchmark-fixtures.md`: notes for forward-testing against public benchmark samples.
 - `templates/visual-workflow-ledger.md`: reusable ledger for long-running multi-page visual work.
 - `scripts/visual_artifact_check.js`: validates score JSON, screenshot, and diff artifact existence and freshness.
-- `scripts/visual_readiness_report.js`: aggregates freshness, score sanity, ledger, interaction, OCR, and region evidence before reporting readiness.
+- `scripts/visual_readiness_report.js`: aggregates freshness, optional `evidence-freshness`, score sanity, ledger, interaction, OCR, and region evidence before reporting readiness.
 - `scripts/visual_compare.js`: screenshot rendering, pixel diffing, and optional structured diagnostics.
 - `scripts/visual_interaction_check.js`: validates hover, focus, click, modal, route, and other interaction states from a manifest.
 - `scripts/visual_ledger_check.js`: validates page-lock and checkpoint discipline in visual workflow ledgers.
@@ -387,7 +387,7 @@ node scripts/visual_readiness_report.js \
   --require-regions
 ```
 
-The report validates artifact freshness, score invariants, optional mismatch thresholds, ledger discipline, optional interaction/OCR summary JSON with `ok: true`, and component-region diagnostics. Use it as the final evidence gate for long-running benchmark, release-polish, or pixel-critical work so one stale or missing artifact cannot be hidden behind a single green score.
+The report validates artifact freshness, optional `evidence-freshness` for supplied ledger/interaction/OCR files when `--newer-than` or `--min-mtime` is present, score invariants, optional mismatch thresholds, ledger discipline, optional interaction/OCR summary JSON with `ok: true`, and component-region diagnostics. Use it as the final evidence gate for long-running benchmark, release-polish, or pixel-critical work so one stale or missing artifact cannot be hidden behind a single green score.
 
 ### `visual_region_manifest.js`
 

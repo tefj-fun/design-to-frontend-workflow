@@ -124,6 +124,7 @@ assert.deepEqual(
   passingSummary.checks.map((check) => check.name),
   [
     "artifact-freshness",
+    "evidence-freshness",
     "score-sanity",
     "threshold",
     "ledger",
@@ -147,5 +148,13 @@ touch(paths.diff, staleTime);
 const staleFailure = runReadiness(script, paths);
 assert.notEqual(staleFailure.status, 0);
 assert.match(staleFailure.stderr, /artifact-freshness/i);
+
+touch(paths.diff, freshTime);
+touch(paths.interactionSummary, staleTime);
+
+const staleEvidenceFailure = runReadiness(script, paths);
+assert.notEqual(staleEvidenceFailure.status, 0);
+assert.match(staleEvidenceFailure.stderr, /evidence-freshness/i);
+assert.match(staleEvidenceFailure.stderr, /interaction-summary/i);
 
 console.log("visual_readiness_report test passed");
