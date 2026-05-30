@@ -32,6 +32,7 @@ This skill makes the workflow explicit. It asks the agent to inventory the desig
 - `references/benchmark-fixtures.md`: notes for forward-testing against public benchmark samples.
 - `templates/visual-workflow-ledger.md`: reusable ledger for long-running multi-page visual work.
 - `scripts/visual_compare.js`: screenshot rendering, pixel diffing, and optional structured diagnostics.
+- `scripts/visual_region_manifest.js`: generates component-region crop manifests from rendered DOM selectors or visible text.
 - `scripts/visual_refine_loop.js`: bounded variant scoring for template-driven visual refinements.
 - `scripts/visual_local_search.js`: bounded local search over tunable implementation variables.
 - `scripts/visual_ocr_compare.js`: OCR line-box diagnostics for text-heavy screenshots.
@@ -345,6 +346,32 @@ node scripts/visual_compare.js \
 The mask manifest may be either an array or `{ "masks": [...] }`; each mask needs `id`, `x`, `y`, `width`, and `height`. The region manifest may be either an array or `{ "regions": [...] }`; each region needs `id`, `x`, `y`, `width`, and `height`, with optional `role`, `state`, `selector`, and `viewport`.
 
 The JSON summary includes `fullPageMismatch`, `uiMaskedMismatch`, `regionMismatch[]`, `regionGeometry[]`, and `localCropMismatch` when the relevant manifests are supplied. Use the region fields to diagnose specific buttons, inputs, rows, cards, badges, or icon-label pairs after full-page content and layout are broadly correct.
+
+### `visual_region_manifest.js`
+
+Generate a `regions.json` file from a rendered page before calling `visual_compare.js`:
+
+```bash
+node scripts/visual_region_manifest.js \
+  --target candidate.html \
+  --source region-source.json \
+  --output regions.json \
+  --width 1440 \
+  --height 900
+```
+
+The source file may be either an array or `{ "regions": [...] }`. Each region needs an `id` and either a CSS `selector` or visible `text`; optional fields include `role`, `state`, `match`, `padding`, `paddingTop`, `paddingRight`, `paddingBottom`, `paddingLeft`, and `viewport`.
+
+Example source:
+
+```json
+{
+  "regions": [
+    { "id": "primary-cta", "selector": "[data-testid='primary-cta']", "role": "button", "padding": 4 },
+    { "id": "status-label", "text": "Ready", "match": "exact", "role": "label" }
+  ]
+}
+```
 
 When a structured reference is available:
 

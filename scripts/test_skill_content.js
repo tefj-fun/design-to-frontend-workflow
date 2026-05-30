@@ -54,6 +54,7 @@ const requiredSkillSections = [
   'Artifact ledger path or summary',
   'templates/visual-workflow-ledger.md',
   'pass `--region-manifest`',
+  'scripts/visual_region_manifest.js',
 ];
 
 for (const text of requiredSkillSections) {
@@ -68,6 +69,8 @@ const requiredReadmeSections = [
   'templates/visual-workflow-ledger.md',
   '--region-manifest regions.json',
   '--mask-manifest masks.json',
+  'scripts/visual_region_manifest.js',
+  '--source region-source.json',
   'The JSON summary includes `fullPageMismatch`, `uiMaskedMismatch`, `regionMismatch[]`, `regionGeometry[]`, and `localCropMismatch` when the relevant manifests are supplied.',
 ];
 
