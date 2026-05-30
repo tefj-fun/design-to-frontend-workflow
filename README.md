@@ -32,6 +32,7 @@ This skill makes the workflow explicit. It asks the agent to inventory the desig
 - `references/benchmark-fixtures.md`: notes for forward-testing against public benchmark samples.
 - `templates/visual-workflow-ledger.md`: reusable ledger for long-running multi-page visual work.
 - `scripts/visual_artifact_check.js`: validates score JSON, screenshot, and diff artifact existence and freshness.
+- `scripts/visual_readiness_report.js`: aggregates freshness, score sanity, ledger, interaction, OCR, and region evidence before reporting readiness.
 - `scripts/visual_compare.js`: screenshot rendering, pixel diffing, and optional structured diagnostics.
 - `scripts/visual_interaction_check.js`: validates hover, focus, click, modal, route, and other interaction states from a manifest.
 - `scripts/visual_ledger_check.js`: validates page-lock and checkpoint discipline in visual workflow ledgers.
@@ -371,6 +372,23 @@ node scripts/visual_artifact_check.js \
 
 The checker reads `score.json`, verifies referenced `reference`, `candidate`, `diff`, and `rendered` artifacts exist, and fails if any are older than the newest `--newer-than` file or optional `--min-mtime` timestamp.
 
+### `visual_readiness_report.js`
+
+Aggregate the evidence that must be true before reporting a page or flow as visually ready:
+
+```bash
+node scripts/visual_readiness_report.js \
+  --score score.json \
+  --newer-than src/App.tsx \
+  --ledger visual-workflow-ledger.md \
+  --interaction-summary interaction-summary.json \
+  --ocr-summary ocr-summary.json \
+  --max-ui-mismatch 3 \
+  --require-regions
+```
+
+The report validates artifact freshness, score invariants, optional mismatch thresholds, ledger discipline, optional interaction/OCR summary JSON with `ok: true`, and component-region diagnostics. Use it as the final evidence gate for long-running benchmark, release-polish, or pixel-critical work so one stale or missing artifact cannot be hidden behind a single green score.
+
 ### `visual_region_manifest.js`
 
 Generate a `regions.json` file from a rendered page before calling `visual_compare.js`:
@@ -542,6 +560,7 @@ When reporting implementation results, include:
 - stack/components touched
 - breakpoints checked
 - screenshots or diff evidence
+- visual readiness report status
 - latest `uiMaskedMismatch`
 - latest `fullPageMismatch`
 - whether `<3%` masked UI target was met
