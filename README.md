@@ -32,6 +32,7 @@ This skill makes the workflow explicit. It asks the agent to inventory the desig
 - `references/benchmark-fixtures.md`: notes for forward-testing against public benchmark samples.
 - `templates/visual-workflow-ledger.md`: reusable ledger for long-running multi-page visual work.
 - `scripts/visual_compare.js`: screenshot rendering, pixel diffing, and optional structured diagnostics.
+- `scripts/visual_ledger_check.js`: validates page-lock and checkpoint discipline in visual workflow ledgers.
 - `scripts/visual_region_manifest.js`: generates component-region crop manifests from rendered DOM selectors or visible text.
 - `scripts/visual_refine_loop.js`: bounded variant scoring for template-driven visual refinements.
 - `scripts/visual_local_search.js`: bounded local search over tunable implementation variables.
@@ -158,6 +159,15 @@ Each page-focused pass should keep a small ledger: active page, fidelity target,
 For long-running, multi-page, benchmark, or release-polish work, copy `templates/visual-workflow-ledger.md` into the project or artifact folder and use it as the control-plane record.
 
 During long-running work, checkpoint after every full scoreboard refresh or every 60-90 minutes. Report the active page, current/best score, accepted changes, rejected hypotheses, blocker class, next planned patch, and whether the active fidelity gate remains feasible.
+
+Use `scripts/visual_ledger_check.js` after ledger updates and before switching active pages:
+
+```bash
+node scripts/visual_ledger_check.js \
+  --ledger visual-workflow-ledger.md
+```
+
+The checker fails when the active page or exit condition is blank, when the checkpoint table is malformed, or when checkpoints show page switching without a recorded switch reason.
 
 ## Source of Truth Ranking
 

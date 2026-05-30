@@ -295,6 +295,8 @@ Maintain a page ledger during multi-page work:
 
 Use `templates/visual-workflow-ledger.md` as the default page ledger format when the task is long-running, multi-page, benchmark-driven, or likely to span context compaction.
 
+When maintaining that ledger, run `scripts/visual_ledger_check.js --ledger visual-workflow-ledger.md` after checkpoint updates and before switching active pages. Treat failures as workflow bugs: fix the active page lock, exit condition, checkpoint table, or switch reason before continuing visual optimization.
+
 For apps with multi-step workflows, focus on one flow segment at a time rather than jumping among unrelated screens. A flow segment can include multiple pages only when the user task depends on their continuity, such as onboarding step 1 -> step 2 -> success state.
 
 During long-running work, checkpoint after every full scoreboard refresh or every 60-90 minutes, whichever comes first. A checkpoint must report the active page, current/best score, accepted changes, rejected hypotheses, current blocker class, next planned patch, and whether the active fidelity gate remains feasible under the current source material.

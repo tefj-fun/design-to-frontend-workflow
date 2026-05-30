@@ -6,7 +6,7 @@
   "license": "MIT",
   "type": "commonjs",
   "scripts": {
-    "test": "node scripts/test_skill_content.js && node scripts/test_visual_compare.js && node scripts/test_visual_region_manifest.js && node scripts/test_visual_refine_loop.js && node scripts/test_visual_local_search.js && node scripts/test_visual_diagnostics.js && node scripts/test_typography_probe.js && node scripts/test_visual_ocr_compare.js && node scripts/test_visual_ocr_local_search.js"
+    "test": "node scripts/test_skill_content.js && node scripts/test_visual_ledger_check.js && node scripts/test_visual_compare.js && node scripts/test_visual_region_manifest.js && node scripts/test_visual_refine_loop.js && node scripts/test_visual_local_search.js && node scripts/test_visual_diagnostics.js && node scripts/test_typography_probe.js && node scripts/test_visual_ocr_compare.js && node scripts/test_visual_ocr_local_search.js"
   },
   "dependencies": {
     "pixelmatch": "^7.1.0",
