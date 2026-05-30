@@ -141,6 +141,28 @@ assert.deepEqual(
   ],
 );
 
+const missingInteractionFile = runReadinessArgs(script, [
+  "--score",
+  paths.score,
+  "--interaction-summary",
+  path.join(tmp, "missing-interaction-summary.json"),
+  "--max-ui-mismatch",
+  "3",
+]);
+assert.notEqual(missingInteractionFile.status, 0);
+assert.match(missingInteractionFile.stderr, /^interaction-summary: .*missing/im);
+
+const missingLedgerFile = runReadinessArgs(script, [
+  "--score",
+  paths.score,
+  "--ledger",
+  path.join(tmp, "missing-ledger.md"),
+  "--max-ui-mismatch",
+  "3",
+]);
+assert.notEqual(missingLedgerFile.status, 0);
+assert.match(missingLedgerFile.stderr, /^ledger: .*missing/im);
+
 const missingInteraction = runReadinessArgs(script, [
   "--score",
   paths.score,

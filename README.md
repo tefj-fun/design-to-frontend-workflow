@@ -390,7 +390,7 @@ node scripts/visual_readiness_report.js \
   --require-regions
 ```
 
-The report validates artifact freshness, optional `evidence-freshness` for supplied ledger/interaction/OCR files when `--newer-than` or `--min-mtime` is present, score invariants, optional mismatch thresholds, ledger discipline, optional interaction/OCR summary JSON with `ok: true`, and component-region diagnostics. Use `--require-ledger`, `--require-interactions`, `--require-ocr`, and `--require-regions` for strict final gates so omitted evidence fails explicitly instead of being treated as not applicable.
+The report validates artifact freshness, optional `evidence-freshness` for supplied ledger/interaction/OCR files when `--newer-than` or `--min-mtime` is present, score invariants, optional mismatch thresholds, ledger discipline, optional interaction/OCR summary JSON with `ok: true`, and component-region diagnostics. Use `--require-ledger`, `--require-interactions`, `--require-ocr`, and `--require-regions` for strict final gates so omitted evidence fails explicitly instead of being treated as not applicable. The report treats missing or invalid ledger, interaction summary, and OCR summary files as named readiness blockers.
 
 ### `visual_region_manifest.js`
 

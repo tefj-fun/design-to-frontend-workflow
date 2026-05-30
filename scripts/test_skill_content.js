@@ -64,6 +64,7 @@ const requiredSkillSections = [
   '--require-ledger',
   '--require-interactions',
   '--require-ocr',
+  'missing or invalid',
 ];
 
 for (const text of requiredSkillSections) {
@@ -91,6 +92,7 @@ const requiredReadmeSections = [
   '--require-ledger',
   '--require-interactions',
   '--require-ocr',
+  'missing or invalid',
   '--source region-source.json',
   'The JSON summary includes `fullPageMismatch`, `uiMaskedMismatch`, `regionMismatch[]`, `regionGeometry[]`, and `localCropMismatch` when the relevant manifests are supplied.',
 ];

@@ -174,6 +174,7 @@ Before trusting visual scores, run a scoring harness sanity gate:
 - When score JSON is saved, run `scripts/visual_artifact_check.js --score score.json --newer-than <changed-source-or-reference>` before reporting scores from that artifact.
 - For final or long-running visual evidence, run `scripts/visual_readiness_report.js --score score.json --newer-than <changed-source-or-reference> --max-ui-mismatch <target> --require-ledger --require-interactions --require-ocr --require-regions` when those evidence types are expected, so the report fails omitted evidence instead of silently treating it as optional.
 - The readiness report aggregates artifact freshness, optional `evidence-freshness` for ledger/interaction/OCR files, score sanity, ledger, interaction, OCR, and region evidence before reporting readiness.
+- Treat missing or invalid ledger, interaction summary, and OCR summary files as readiness failures with named blockers; do not report around them by quoting raw filesystem errors.
 - Mask boxes are within image bounds, non-overlapping unless intentionally layered, and cover only approved image-like regions from the mask manifest.
 - Approved masks report masked-pixel ratio and per-mask geometry; unexpectedly large masks require review before accepting the score.
 - Score invariants hold: `0 <= uiMaskedMismatch <= fullPageMismatch <= 100`, no negative mismatches, no impossible percentages, and no score derived from diff-image alpha subtraction unless that method has been separately verified against per-mask crop scoring.
@@ -421,7 +422,7 @@ When reporting results, include:
 - Whether backend/API/data-model work can proceed in parallel, and which contracts or states are ready.
 - Screenshots or visual evidence when implementation occurred.
 - Artifact ledger path or summary for reference, current screenshot, diff, score JSON, masks, regions, OCR/text diagnostics, and structured diagnostics.
-- Visual readiness report status, including the `scripts/visual_readiness_report.js` command, required-evidence flags such as `--require-ledger`, `--require-interactions`, and `--require-ocr`, and any failed checks such as `artifact-freshness` or `evidence-freshness`.
+- Visual readiness report status, including the `scripts/visual_readiness_report.js` command, required-evidence flags such as `--require-ledger`, `--require-interactions`, and `--require-ocr`, and any failed checks such as `artifact-freshness`, `evidence-freshness`, or missing or invalid supporting evidence.
 - Latest `uiMaskedMismatch` percentage, `fullPageMismatch` percentage, and whether the active fidelity target was met.
 - Subagent patch status (not used, in progress, pending review, accepted, or blocked/re-dispatched).
 - Component-region manifest status: not needed, source-derived, DOM-derived, screenshot-inferred, or not yet checked.

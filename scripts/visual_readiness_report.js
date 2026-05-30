@@ -46,6 +46,16 @@ function readJson(filePath) {
   return JSON.parse(fs.readFileSync(path.resolve(filePath), "utf8"));
 }
 
+function missingOrInvalidEvidence(name, label, filePath, error) {
+  const resolved = path.resolve(filePath);
+  const reason = error && error.code === "ENOENT" ? "missing" : "invalid";
+  return fail(name, `${label} is ${reason}: ${resolved}`, {
+    path: resolved,
+    reason,
+    error: error.message,
+  });
+}
+
 function checkArtifactFreshness(options) {
   const summary = checkArtifacts({
     score: options.score,
@@ -184,16 +194,24 @@ function checkThreshold(score, options) {
 }
 
 function checkLedgerEvidence(ledgerPath) {
-  const markdown = fs.readFileSync(path.resolve(ledgerPath), "utf8");
   try {
+    const markdown = fs.readFileSync(path.resolve(ledgerPath), "utf8");
     return pass("ledger", checkLedger(markdown, ledgerPath));
   } catch (error) {
+    if (error.code === "ENOENT" || error instanceof SyntaxError) {
+      return missingOrInvalidEvidence("ledger", "ledger", ledgerPath, error);
+    }
     return fail("ledger", error.message, { ledger: path.resolve(ledgerPath) });
   }
 }
 
 function checkSummaryJson(name, filePath) {
-  const summary = readJson(filePath);
+  let summary;
+  try {
+    summary = readJson(filePath);
+  } catch (error) {
+    return missingOrInvalidEvidence(name, name, filePath, error);
+  }
   if (summary.ok !== true) {
     return fail(name, `${name} ok is not true`, {
       path: path.resolve(filePath),
@@ -304,6 +322,7 @@ module.exports = {
   checkSummaryJson,
   checkThreshold,
   fail,
+  missingOrInvalidEvidence,
   parseOptionalNumber,
   pass,
 };
