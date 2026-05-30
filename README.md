@@ -32,6 +32,7 @@ This skill makes the workflow explicit. It asks the agent to inventory the desig
 - `references/benchmark-fixtures.md`: notes for forward-testing against public benchmark samples.
 - `templates/visual-workflow-ledger.md`: reusable ledger for long-running multi-page visual work.
 - `scripts/visual_compare.js`: screenshot rendering, pixel diffing, and optional structured diagnostics.
+- `scripts/visual_interaction_check.js`: validates hover, focus, click, modal, route, and other interaction states from a manifest.
 - `scripts/visual_ledger_check.js`: validates page-lock and checkpoint discipline in visual workflow ledgers.
 - `scripts/visual_region_manifest.js`: generates component-region crop manifests from rendered DOM selectors or visible text.
 - `scripts/visual_refine_loop.js`: bounded variant scoring for template-driven visual refinements.
@@ -407,6 +408,38 @@ Use template placeholders and a variants JSON file to test plausible changes:
 ```
 
 Accept only variants that improve the targeted metric without degrading text, icon coverage, layout, or global score.
+
+### `visual_interaction_check.js`
+
+Validate states that static screenshots cannot prove:
+
+```bash
+node scripts/visual_interaction_check.js \
+  --target candidate.html \
+  --manifest interactions.json \
+  --output interaction-summary.json \
+  --width 1440 \
+  --height 900
+```
+
+The manifest may be either an array or `{ "states": [...] }`. Each state has an `id`, optional `actions`, and assertions. Supported actions include `click`, `hover`, `focus`, `fill`, `press`, `wait`, and `waitForSelector`. Supported assertions include `visible`, `hidden`, `text`, `focused`, `css`, `count`, and `url`.
+
+Example:
+
+```json
+{
+  "states": [
+    {
+      "id": "open-modal",
+      "actions": [{ "type": "click", "selector": "#open" }],
+      "assertions": [
+        { "type": "visible", "selector": "#modal" },
+        { "type": "text", "selector": "#modal", "contains": "Modal ready" }
+      ]
+    }
+  ]
+}
+```
 
 ### `visual_local_search.js`
 

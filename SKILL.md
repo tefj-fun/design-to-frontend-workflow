@@ -398,6 +398,8 @@ After static visual matching, verify interactive states:
 - Mobile menus and touch-sized controls.
 - Map/list synchronization or other domain-specific UI behavior.
 
+When states can be described with selectors and assertions, run `scripts/visual_interaction_check.js --target <page> --manifest interactions.json` before claiming workflow readiness. Treat failures as product or implementation issues, not visual polish.
+
 For workflow-heavy apps, inspect multiple states instead of only the first screen.
 
 ## Output Expectations
