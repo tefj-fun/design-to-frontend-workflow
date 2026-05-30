@@ -328,6 +328,24 @@ node scripts/visual_compare.js \
   --threshold 0.1
 ```
 
+With approved raster masks and component crops:
+
+```bash
+node scripts/visual_compare.js \
+  --reference reference.png \
+  --candidate candidate.png \
+  --diff diff.png \
+  --width 1440 \
+  --height 900 \
+  --threshold 0.1 \
+  --mask-manifest masks.json \
+  --region-manifest regions.json
+```
+
+The mask manifest may be either an array or `{ "masks": [...] }`; each mask needs `id`, `x`, `y`, `width`, and `height`. The region manifest may be either an array or `{ "regions": [...] }`; each region needs `id`, `x`, `y`, `width`, and `height`, with optional `role`, `state`, `selector`, and `viewport`.
+
+The JSON summary includes `fullPageMismatch`, `uiMaskedMismatch`, `regionMismatch[]`, `regionGeometry[]`, and `localCropMismatch` when the relevant manifests are supplied. Use the region fields to diagnose specific buttons, inputs, rows, cards, badges, or icon-label pairs after full-page content and layout are broadly correct.
+
 When a structured reference is available:
 
 ```bash

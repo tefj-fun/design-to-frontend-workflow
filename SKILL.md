@@ -185,6 +185,7 @@ Use two visual scores when image-like regions are present:
 
 When a component-region manifest exists, also emit local comparison diagnostics:
 
+- When using `scripts/visual_compare.js`, pass `--region-manifest` with the component-region manifest path so the score JSON includes these local diagnostics.
 - `regionMismatch[]`: per-region visual mismatch scores for each named component crop, reported with the region id, viewport, and state.
 - `regionGeometry[]`: per-region bounding-box deltas such as `dx`, `dy`, `dw`, `dh`, center delta, and nearest-neighbor spacing delta when relevant.
 - `localCropMismatch`: the pixel or perceptual mismatch for one focused component crop, such as a button, input, table row, or card subline.

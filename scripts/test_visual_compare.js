@@ -32,6 +32,8 @@ const diff = path.join(tmp, "diff.png");
 const wrongSizeCandidate = path.join(tmp, "candidate-3x1.png");
 const maskManifest = path.join(tmp, "mask-manifest.json");
 const validMaskManifest = path.join(tmp, "valid-mask-manifest.json");
+const badRegionManifest = path.join(tmp, "bad-region-manifest.json");
+const validRegionManifest = path.join(tmp, "valid-region-manifest.json");
 const script = path.resolve(__dirname, "visual_compare.js");
 
 writePng(reference, [
@@ -163,5 +165,73 @@ assert.equal(maskedSummary.sanity.maskCount, 1);
 assert.equal(maskedSummary.sanity.maskedPixelCount, 1);
 assert.equal(maskedSummary.sanity.maskedPixelRatio, 0.5);
 assert.equal(maskedSummary.sanity.scoreInvariantOk, true);
+
+fs.writeFileSync(badRegionManifest, JSON.stringify({
+  regions: [
+    { id: "bad-button", x: 1, y: 0, width: 2, height: 1, role: "button" },
+  ],
+}, null, 2));
+
+const invalidRegion = spawnSync(process.execPath, [
+  script,
+  "--reference",
+  reference,
+  "--candidate",
+  candidate,
+  "--diff",
+  path.join(tmp, "bad-region-diff.png"),
+  "--width",
+  "2",
+  "--height",
+  "1",
+  "--region-manifest",
+  badRegionManifest,
+], {
+  encoding: "utf8",
+  env: process.env,
+});
+
+assert.notEqual(invalidRegion.status, 0);
+assert.match(invalidRegion.stderr, /region bad-button must stay within image bounds/i);
+
+fs.writeFileSync(validRegionManifest, JSON.stringify({
+  regions: [
+    { id: "left-cell", x: 0, y: 0, width: 1, height: 1, role: "stable" },
+    { id: "right-button", x: 1, y: 0, width: 1, height: 1, role: "button", state: "default" },
+  ],
+}, null, 2));
+
+const validRegion = spawnSync(process.execPath, [
+  script,
+  "--reference",
+  reference,
+  "--candidate",
+  candidate,
+  "--diff",
+  path.join(tmp, "valid-region-diff.png"),
+  "--width",
+  "2",
+  "--height",
+  "1",
+  "--region-manifest",
+  validRegionManifest,
+], {
+  encoding: "utf8",
+  env: process.env,
+});
+
+assert.equal(validRegion.status, 0, validRegion.stderr || validRegion.stdout);
+const regionSummary = JSON.parse(validRegion.stdout);
+assert.equal(regionSummary.sanity.regionCount, 2);
+assert.equal(regionSummary.regionMismatch.length, 2);
+assert.equal(regionSummary.regionMismatch[0].id, "left-cell");
+assert.equal(regionSummary.regionMismatch[0].mismatchPercent, 0);
+assert.equal(regionSummary.regionMismatch[1].id, "right-button");
+assert.equal(regionSummary.regionMismatch[1].mismatchPercent, 100);
+assert.equal(regionSummary.regionGeometry.length, 2);
+assert.equal(regionSummary.regionGeometry[1].id, "right-button");
+assert.equal(regionSummary.regionGeometry[1].centerDelta, 0);
+assert.equal(regionSummary.localCropMismatch.id, "right-button");
+assert.equal(regionSummary.localCropMismatch.mismatchPercent, 100);
 
 console.log("visual_compare test passed");

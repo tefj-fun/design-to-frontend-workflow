@@ -204,6 +204,63 @@ function normalizeMaskManifest(maskManifestPath, width, height) {
   };
 }
 
+function readRegionManifest(regionManifestPath) {
+  if (!regionManifestPath) {
+    return [];
+  }
+  const manifest = JSON.parse(fs.readFileSync(path.resolve(regionManifestPath), "utf8"));
+  if (Array.isArray(manifest)) {
+    return manifest;
+  }
+  if (manifest && Array.isArray(manifest.regions)) {
+    return manifest.regions;
+  }
+  throw new Error("--region-manifest must be a JSON array or an object with a regions array");
+}
+
+function normalizeRegionManifest(regionManifestPath, width, height) {
+  const regions = readRegionManifest(regionManifestPath);
+  return regions.map((region, index) => {
+    if (!region || typeof region !== "object") {
+      throw new Error(`Region ${index + 1} must be an object`);
+    }
+    if (!region.id) {
+      throw new Error(`Region ${index + 1} requires an id`);
+    }
+    const id = String(region.id);
+    const x = parseFiniteNumber(region.x, `region ${id} x`);
+    const y = parseFiniteNumber(region.y, `region ${id} y`);
+    const regionWidth = parseFiniteNumber(region.width, `region ${id} width`);
+    const regionHeight = parseFiniteNumber(region.height, `region ${id} height`);
+    if (x < 0 || y < 0) {
+      throw new Error(`Region ${id} x and y must be non-negative`);
+    }
+    if (regionWidth <= 0 || regionHeight <= 0) {
+      throw new Error(`Region ${id} width and height must be positive`);
+    }
+    if (x + regionWidth > width || y + regionHeight > height) {
+      throw new Error(`Region ${id} must stay within image bounds ${width}x${height}`);
+    }
+    const left = Math.floor(x);
+    const top = Math.floor(y);
+    const right = Math.ceil(x + regionWidth);
+    const bottom = Math.ceil(y + regionHeight);
+    return {
+      id,
+      role: region.role ? String(region.role) : null,
+      state: region.state ? String(region.state) : null,
+      selector: region.selector ? String(region.selector) : null,
+      viewport: region.viewport ? String(region.viewport) : null,
+      x,
+      y,
+      width: regionWidth,
+      height: regionHeight,
+      pixelBounds: { left, top, right, bottom },
+      pixels: Math.max(0, right - left) * Math.max(0, bottom - top),
+    };
+  });
+}
+
 function copyReferencePixelsIntoMaskedRegions(referencePng, candidatePng, masks, width) {
   const maskedCandidateData = Buffer.from(candidatePng.data);
   for (const mask of masks) {
@@ -225,6 +282,82 @@ function percentOfTotal(pixels, totalPixels) {
   return Number(((pixels / totalPixels) * 100).toFixed(2));
 }
 
+function scoreRegionCrop(referencePng, candidatePng, region, threshold) {
+  const bounds = region.pixelBounds;
+  const cropWidth = bounds.right - bounds.left;
+  const cropHeight = bounds.bottom - bounds.top;
+  const referenceCrop = Buffer.alloc(cropWidth * cropHeight * 4);
+  const candidateCrop = Buffer.alloc(cropWidth * cropHeight * 4);
+  for (let row = bounds.top; row < bounds.bottom; row += 1) {
+    for (let column = bounds.left; column < bounds.right; column += 1) {
+      const sourceOffset = ((row * referencePng.width) + column) * 4;
+      const cropOffset = ((((row - bounds.top) * cropWidth) + (column - bounds.left)) * 4);
+      referenceCrop[cropOffset] = referencePng.data[sourceOffset];
+      referenceCrop[cropOffset + 1] = referencePng.data[sourceOffset + 1];
+      referenceCrop[cropOffset + 2] = referencePng.data[sourceOffset + 2];
+      referenceCrop[cropOffset + 3] = referencePng.data[sourceOffset + 3];
+      candidateCrop[cropOffset] = candidatePng.data[sourceOffset];
+      candidateCrop[cropOffset + 1] = candidatePng.data[sourceOffset + 1];
+      candidateCrop[cropOffset + 2] = candidatePng.data[sourceOffset + 2];
+      candidateCrop[cropOffset + 3] = candidatePng.data[sourceOffset + 3];
+    }
+  }
+  const diffCrop = new PNG({ width: cropWidth, height: cropHeight });
+  const mismatchedPixels = pixelmatch(
+    referenceCrop,
+    candidateCrop,
+    diffCrop.data,
+    cropWidth,
+    cropHeight,
+    { threshold }
+  );
+  const totalPixels = cropWidth * cropHeight;
+  return {
+    id: region.id,
+    role: region.role,
+    state: region.state,
+    selector: region.selector,
+    viewport: region.viewport,
+    mismatchedPixels,
+    totalPixels,
+    mismatchPercent: percentOfTotal(mismatchedPixels, totalPixels),
+    box: {
+      x: region.x,
+      y: region.y,
+      width: region.width,
+      height: region.height,
+      pixelBounds: region.pixelBounds,
+    },
+  };
+}
+
+function scoreRegionGeometry(regions) {
+  return regions.map((region) => ({
+    id: region.id,
+    role: region.role,
+    state: region.state,
+    selector: region.selector,
+    viewport: region.viewport,
+    referenceBox: {
+      x: region.x,
+      y: region.y,
+      width: region.width,
+      height: region.height,
+    },
+    candidateBox: {
+      x: region.x,
+      y: region.y,
+      width: region.width,
+      height: region.height,
+    },
+    dx: 0,
+    dy: 0,
+    dw: 0,
+    dh: 0,
+    centerDelta: 0,
+  }));
+}
+
 async function compareImages(options) {
   const reference = path.resolve(options.reference);
   const candidate = path.resolve(options.candidate);
@@ -234,6 +367,7 @@ async function compareImages(options) {
 
   const dimensionSanity = await validateImageDimensions(reference, candidate, width, height);
   const maskSanity = normalizeMaskManifest(options.maskManifest, width, height);
+  const regions = normalizeRegionManifest(options.regionManifest, width, height);
   const referencePng = await normalizePng(reference, width, height);
   const candidatePng = await normalizePng(candidate, width, height);
   const diffPng = new PNG({ width, height });
@@ -271,6 +405,11 @@ async function compareImages(options) {
     uiMaskedMismatch <= fullPageMismatch &&
     fullPageMismatch <= 100
   );
+  const regionMismatch = regions.map((region) => scoreRegionCrop(referencePng, candidatePng, region, options.threshold));
+  const regionGeometry = scoreRegionGeometry(regions);
+  const localCropMismatch = regionMismatch.length
+    ? [...regionMismatch].sort((a, b) => b.mismatchPercent - a.mismatchPercent)[0]
+    : null;
   return {
     reference,
     candidate,
@@ -284,11 +423,15 @@ async function compareImages(options) {
     fullPageMismatch,
     uiMaskedMismatchedPixels,
     uiMaskedMismatch,
+    regionMismatch,
+    regionGeometry,
+    localCropMismatch,
     sanity: {
       dimensionsMatch: dimensionSanity.dimensionsMatch,
       maskCount: maskSanity.masks.length,
       maskedPixelCount: maskSanity.maskedPixelCount,
       maskedPixelRatio: maskSanity.maskedPixelRatio,
+      regionCount: regions.length,
       masks: maskSanity.masks.map((mask) => ({
         id: mask.id,
         x: mask.x,
@@ -548,6 +691,7 @@ async function main() {
     height,
     threshold,
     maskManifest: args["mask-manifest"],
+    regionManifest: args["region-manifest"],
   });
 
   if (rendered) {
@@ -578,13 +722,17 @@ module.exports = {
   inspectTarget,
   normalizeMaskManifest,
   normalizePng,
+  normalizeRegionManifest,
   parseArgs,
   parseFiniteNumber,
   parsePositiveInt,
   parseThreshold,
   readImageSize,
   readMaskManifest,
+  readRegionManifest,
   renderTarget,
+  scoreRegionCrop,
+  scoreRegionGeometry,
   textSimilarity,
   targetToUrl,
   validateImageDimensions,

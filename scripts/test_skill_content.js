@@ -53,6 +53,7 @@ const requiredSkillSections = [
   'Shared primitive changes need a regression budget:',
   'Artifact ledger path or summary',
   'templates/visual-workflow-ledger.md',
+  'pass `--region-manifest`',
 ];
 
 for (const text of requiredSkillSections) {
@@ -65,6 +66,9 @@ const requiredReadmeSections = [
   '## Page-Focused Refinement',
   'Before implementing image-like regions, make an asset decision:',
   'templates/visual-workflow-ledger.md',
+  '--region-manifest regions.json',
+  '--mask-manifest masks.json',
+  'The JSON summary includes `fullPageMismatch`, `uiMaskedMismatch`, `regionMismatch[]`, `regionGeometry[]`, and `localCropMismatch` when the relevant manifests are supplied.',
 ];
 
 for (const text of requiredReadmeSections) {
