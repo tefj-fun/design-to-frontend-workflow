@@ -58,6 +58,15 @@ For rendered images or image-like regions, create a mask manifest before scoring
 - If a raster region contains UI text or controls over the image, mask only the image pixels and keep overlays in the scored UI layer whenever practical.
 - If the user or benchmark requires exact image fidelity, do not mask that region; score it as content.
 
+Before spending implementation time on image-like regions, make an asset decision:
+
+- `exact-required`: the benchmark or product requires exact pixels; acquire/export/source the asset before tuning layout around it.
+- `representative-accepted`: a close representative image, map, chart, or illustration is acceptable; mask the raster pixels but still verify geometry and overlays.
+- `generated-replacement`: generate or source a closer asset, then freeze it as a fixture before scoring.
+- `blocked`: the asset is unavailable and cannot be reasonably approximated; document the blocker instead of burning cycles on code-drawn substitutes.
+
+Do not approximate photos, satellite maps, dense charts, or complex illustrations with CSS/SVG unless the target is explicitly a coded/vector representation. Decide the asset policy first, then tune UI around that decision.
+
 Icons are first-class assets, not decorative afterthoughts. Before coding, build an icon manifest:
 
 - List every visible icon by semantic role, screen region, owner text or component, approximate size, stroke/fill style, color, and state.
@@ -92,6 +101,14 @@ Use the census to define implementation primitives before page-focused optimizat
 - Keep shared primitives state-aware and data-driven; do not bake in one screenshot's literal text, dimensions, or row count.
 - Do not overbuild a full component library from speculative screenshots. Build the stable subset needed for the active page, vertical slice, or release target, and record deferred primitives.
 - After changing a shared primitive, run a small cross-page regression check on every page that uses it before returning to the active page lock.
+
+Shared primitive changes need a regression budget:
+
+- List the affected pages or regions before editing the primitive.
+- Record each affected page's current score or local-region evidence.
+- Accept the shared change only if it improves the active page without meaningful affected-page regressions, or if the regression is an explicit semantic/content correction.
+- If a shared primitive helps one page but hurts another, split the variant by state, density, or template instead of forcing one style everywhere.
+- Record the accepted budget and any deferred affected-page follow-up in the page ledger.
 
 The census should inform page selection. If one page depends on many unbuilt shared primitives, build those primitives first. If a page has unique raster-heavy content and few reusable components, do not let it dominate early design-system work.
 
@@ -147,6 +164,18 @@ Use Playwright or the browser tooling available in the current environment. Capt
 
 When available, use `scripts/visual_compare.js` to render a local HTML/URL target and produce a pixel-diff summary plus diff image. It requires Node packages `playwright`, `sharp`, `pngjs`, and `pixelmatch`; if the current environment lacks them, use the bundled Codex workspace runtime or another installed browser workflow.
 
+Before trusting visual scores, run a scoring harness sanity gate:
+
+- Reference and candidate screenshots use the same viewport, height, device scale factor, color scheme, locale, font loading state, animation state, and route/state.
+- Reference and candidate image dimensions match exactly; if they do not, fix capture setup before scoring.
+- Screenshots and diff artifacts are fresh for the current code and route, not reused from an older patch or viewport.
+- Mask boxes are within image bounds, non-overlapping unless intentionally layered, and cover only approved image-like regions from the mask manifest.
+- Approved masks report masked-pixel ratio and per-mask geometry; unexpectedly large masks require review before accepting the score.
+- Score invariants hold: `0 <= uiMaskedMismatch <= fullPageMismatch <= 100`, no negative mismatches, no impossible percentages, and no score derived from diff-image alpha subtraction unless that method has been separately verified against per-mask crop scoring.
+- Console and network errors are checked when they could affect rendering, fonts, images, icons, or route state.
+
+If the sanity gate fails, treat the scorer or capture setup as the active bug. Do not optimize CSS against an invalid score.
+
 Use two visual scores when image-like regions are present:
 
 - `uiMaskedMismatch`: primary acceptance score. Exclude approved mask-manifest regions from pixel mismatch so maps/photos/thumbnails do not dominate UI layout and typography tuning.
@@ -188,6 +217,8 @@ For screenshot-only work, these diagnostics are unavailable unless you first cre
 
 For text-heavy screenshots, DOM element boxes are not enough because paragraph elements can match while rendered line wrapping differs. When local OCR is available, run `scripts/visual_ocr_compare.js` on the actual reference and candidate PNGs to compare rendered text-line boxes:
 
+- Before OCR, run a text visibility audit in the rendered DOM: expected text exists, has nonzero client rects, is not hidden by `display`/`visibility`/`opacity`, is not clipped by overflow ancestors, is not covered at its center point by another element, has readable contrast, and has expected line-box count from `Range.getClientRects()` when practical.
+- Use OCR to verify rendered line geometry after DOM visibility checks pass, or to diagnose screenshot-only references where DOM text cannot be matched directly.
 - Use OCR line diagnostics before accepting pixel-only improvements on text-heavy pages.
 - Treat missing reference lines, changed line wraps, or large line `dy` values as real visual mismatches even if pixelmatch improves.
 - Use DOM diagnostics for component/block geometry and OCR diagnostics for rendered text-line geometry.
@@ -210,6 +241,21 @@ Default release-polish and benchmark target: continue the render-compare-patch l
 Do not apply the `<3%` target as a universal build-start gate. For product development, proceed from structured handoff into vertical-slice work once the component inventory, data contract, and primary states are clear. Keep reporting visual scores, but reserve hard visual blocking for release polish, user-approved critical screens, or defects that make the UI unusable, such as hidden text, blocked controls, severe overflow, missing primary actions, or inaccessible states.
 
 If the masked UI mismatch cannot be reduced below the active gate, document the blocking cause and evidence, such as unavailable source assets, unmasked raster differences, font rendering differences, antialiasing-only noise, real-data constraints, or a user-approved scope limit. When the user asks to optimize or match the benchmark, run additional targeted passes rather than stopping at the first plateau.
+
+#### First-Render Triage
+
+After the first render of a page or flow segment, classify the dominant mismatch before editing:
+
+1. `scorer-or-capture`: failed score sanity, stale artifacts, viewport mismatch, mask bug, missing fonts/assets, or route/state mismatch.
+2. `missing-content`: absent text, icons, controls, rows, cards, sections, overlays, or states.
+3. `macro-layout`: shell, columns, panel hierarchy, page offsets, scroll/viewport framing, or responsive structure.
+4. `shared-primitive`: design-system token, shell, navigation, card, table, button, input, icon language, or typography pattern affects multiple pages.
+5. `text-visibility`: hidden, clipped, overlapped, low-contrast, or incorrectly wrapped rendered text.
+6. `asset-raster`: photos, maps, charts, avatars, screenshots, or generated illustrations dominate the diff.
+7. `local-component`: a specific button, row, card, badge, input, tab, or modal is wrong after content and macro layout are correct.
+8. `polish-noise`: small color, border, shadow, spacing, antialiasing, or font-render differences.
+
+Choose the patch strategy from that classification. Do not run low-level CSS searches while `scorer-or-capture`, `missing-content`, `macro-layout`, `text-visibility`, or unresolved `asset-raster` issues dominate. Reclassify after each accepted patch or after three rejected probes.
 
 #### Page Focus And Switching Rules
 
@@ -236,13 +282,16 @@ Maintain a page ledger during multi-page work:
 
 - Active page or state.
 - Fidelity gate and target score.
+- Artifact paths for reference, current screenshot, diff, score JSON, mask manifest, component-region manifest, OCR/text diagnostics, and structured reference diagnostics when available.
 - Baseline, current, and best-known `uiMaskedMismatch` and `fullPageMismatch`.
 - Top mismatch class and next local region.
 - Shared primitive or page-local component status.
-- Accepted visual patches, semantic-only patches, and rejected regressions.
+- Accepted visual patches, semantic-only patches, scorer/capture fixes, and rejected regressions.
 - Exit condition or blocker if moving to another page.
 
 For apps with multi-step workflows, focus on one flow segment at a time rather than jumping among unrelated screens. A flow segment can include multiple pages only when the user task depends on their continuity, such as onboarding step 1 -> step 2 -> success state.
+
+During long-running work, checkpoint after every full scoreboard refresh or every 60-90 minutes, whichever comes first. A checkpoint must report the active page, current/best score, accepted changes, rejected hypotheses, current blocker class, next planned patch, and whether the active fidelity gate remains feasible under the current source material.
 
 Before each loop iteration, classify the top mismatch region:
 
@@ -353,9 +402,12 @@ When reporting results, include:
 - Breakpoints checked.
 - Design-system census status: not needed, complete, partial, or blocked; include shared primitives created or deferred.
 - Fidelity gate used: concept, structured handoff, vertical slice, release polish, benchmark, or pixel-critical component.
+- Scoring harness sanity status and any scorer/capture fixes applied.
+- First-render or latest mismatch classification.
 - Active page/flow lock status, including switch reason if the active page changed.
 - Whether backend/API/data-model work can proceed in parallel, and which contracts or states are ready.
 - Screenshots or visual evidence when implementation occurred.
+- Artifact ledger path or summary for reference, current screenshot, diff, score JSON, masks, regions, OCR/text diagnostics, and structured diagnostics.
 - Latest `uiMaskedMismatch` percentage, `fullPageMismatch` percentage, and whether the active fidelity target was met.
 - Subagent patch status (not used, in progress, pending review, accepted, or blocked/re-dispatched).
 - Component-region manifest status: not needed, source-derived, DOM-derived, screenshot-inferred, or not yet checked.
@@ -374,10 +426,14 @@ Avoid these unless the user explicitly asks for a throwaway prototype:
 - Omitting icons because the exact library icon is unavailable.
 - Letting maps/photos/video thumbnails dominate the primary UI score without reporting a masked UI score.
 - Masking text, controls, icons, borders, or layout errors as if they were raster image differences.
+- Trusting visual scores before checking viewport, DPR, stale captures, masks, and score invariants.
 - Replacing full-page comparison with isolated component crops, causing locally matched controls to drift from the surrounding layout.
 - Ignoring responsive behavior because the desktop screenshot looks close.
 - Building each page as isolated one-off CSS before inspecting all screens for shared tokens, templates, and components.
 - Overbuilding a complete component library from speculative screenshots before the active page or vertical slice proves the primitives are needed.
+- Code-drawing complex raster assets without first deciding whether exact, representative, generated, or blocked asset policy applies.
+- Running local CSS search before first-render triage shows content, layout, text visibility, and asset policy are already under control.
+- Continuing for hours without a checkpoint, artifact ledger, or rejected-hypothesis record.
 - Treating generated image text as reliable without extracting or checking it.
 - Treating `uiMaskedMismatch < 3%` as a prerequisite for backend, API, data model, or vertical-slice development.
 - Freezing backend contracts to a generated mockup before validating real data, states, permissions, and workflow constraints.

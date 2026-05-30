@@ -110,6 +110,33 @@ Capture:
 
 Use the census to build or adjust only the stable primitives needed by the active page, vertical slice, or release target. Do not build a complete component library from speculative screenshots. After a shared primitive changes, run a small cross-page regression check on affected pages, then return to the active page lock.
 
+## Scoring And Triage Gates
+
+Before trusting visual scores, run a scoring sanity gate:
+
+- reference and candidate use the same viewport, height, device scale factor, color scheme, locale, fonts, animation state, and route/state
+- image dimensions match exactly
+- screenshots, diffs, and score JSON are fresh for the current patch
+- masks are within bounds and cover only approved image-like regions
+- masked-pixel ratio is reported and reviewed when unexpectedly large
+- score invariants hold: `0 <= uiMaskedMismatch <= fullPageMismatch <= 100`
+- console and network errors are checked when they affect rendering
+
+If this gate fails, fix the scorer or capture setup before changing CSS.
+
+After the first render, classify the dominant mismatch before editing:
+
+- `scorer-or-capture`
+- `missing-content`
+- `macro-layout`
+- `shared-primitive`
+- `text-visibility`
+- `asset-raster`
+- `local-component`
+- `polish-noise`
+
+Do not run local CSS search while capture, content, macro layout, text visibility, or asset policy issues dominate.
+
 ## Page-Focused Refinement
 
 For multi-page apps, the default refinement loop should lock onto one active page, route, state, or flow segment. Do not jump among screens after every scoreboard refresh.
@@ -124,7 +151,9 @@ Choose the active target from:
 
 Stay on that target until its fidelity gate is met, it is explicitly blocked, three measured probes fail to improve it, a shared primitive needs a cross-page pass, the user changes priority, or backend/API/state work must happen first. Scoreboard refreshes are diagnostics; they do not reset the active-page lock.
 
-Each page-focused pass should keep a small ledger: active page, fidelity target, baseline/current/best score, top mismatch class, next local region, accepted patches, rejected regressions, and the switch or blocker reason when moving away.
+Each page-focused pass should keep a small ledger: active page, fidelity target, artifact paths, baseline/current/best score, top mismatch class, next local region, shared versus page-local component status, accepted visual patches, semantic-only patches, scorer/capture fixes, rejected regressions, and the switch or blocker reason when moving away.
+
+During long-running work, checkpoint after every full scoreboard refresh or every 60-90 minutes. Report the active page, current/best score, accepted changes, rejected hypotheses, blocker class, next planned patch, and whether the active fidelity gate remains feasible.
 
 ## Source of Truth Ranking
 
@@ -162,6 +191,17 @@ Image-like regions can dominate pixel diffs even when the UI is structurally cor
 - generated illustrations
 
 The primary score can then exclude those regions while still checking their geometry.
+
+Before implementing image-like regions, make an asset decision:
+
+| Policy | Meaning |
+| --- | --- |
+| `exact-required` | Exact pixels are required; acquire/export/source the asset before tuning layout around it. |
+| `representative-accepted` | A close representative asset is acceptable; mask raster pixels but verify geometry and overlays. |
+| `generated-replacement` | Generate or source a closer asset and freeze it as a fixture before scoring. |
+| `blocked` | The asset is unavailable and cannot be reasonably approximated; document the blocker. |
+
+Do not spend hours code-drawing photos, satellite maps, dense charts, or complex illustrations unless the target is explicitly a coded/vector representation.
 
 ### Icon Manifest
 
