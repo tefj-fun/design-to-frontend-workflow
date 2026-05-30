@@ -32,7 +32,7 @@ This skill makes the workflow explicit. It asks the agent to inventory the desig
 - `references/benchmark-fixtures.md`: notes for forward-testing against public benchmark samples.
 - `templates/visual-workflow-ledger.md`: reusable ledger for long-running multi-page visual work.
 - `scripts/visual_artifact_check.js`: validates score JSON, screenshot, and diff artifact existence and freshness.
-- `scripts/visual_readiness_report.js`: aggregates freshness, optional `evidence-freshness`, score sanity, ledger, interaction, OCR, and region evidence before reporting readiness.
+- `scripts/visual_readiness_report.js`: aggregates freshness, optional `evidence-freshness`, score sanity, ledger, interaction, text-visibility, OCR, and region evidence before reporting readiness.
 - `scripts/visual_compare.js`: screenshot rendering, pixel diffing, and optional structured diagnostics.
 - `scripts/visual_interaction_check.js`: validates hover, focus, click, modal, route, and other interaction states from a manifest.
 - `scripts/visual_ledger_check.js`: validates page-lock and checkpoint discipline in visual workflow ledgers.
@@ -383,15 +383,17 @@ node scripts/visual_readiness_report.js \
   --newer-than src/App.tsx \
   --ledger visual-workflow-ledger.md \
   --interaction-summary interaction-summary.json \
+  --text-visibility-summary text-visibility-summary.json \
   --ocr-summary ocr-summary.json \
   --max-ui-mismatch 3 \
   --require-ledger \
   --require-interactions \
+  --require-text-visibility \
   --require-ocr \
   --require-regions
 ```
 
-The report validates artifact freshness, optional `evidence-freshness` for supplied ledger/interaction/OCR files when `--newer-than` or `--min-mtime` is present, score invariants, optional mismatch thresholds, ledger discipline, optional interaction/OCR summary JSON with `ok: true`, and component-region diagnostics. Use `--require-ledger`, `--require-interactions`, `--require-ocr`, and `--require-regions` for strict final gates so omitted evidence fails explicitly instead of being treated as not applicable. The report treats missing or invalid ledger, interaction summary, and OCR summary files as named readiness blockers.
+The report validates artifact freshness, optional `evidence-freshness` for supplied ledger/interaction/text-visibility/OCR files when `--newer-than` or `--min-mtime` is present, score invariants, optional mismatch thresholds, ledger discipline, optional interaction/text-visibility/OCR summary JSON with `ok: true`, and component-region diagnostics. Use `--require-ledger`, `--require-interactions`, `--require-text-visibility`, `--require-ocr`, and `--require-regions` for strict final gates so omitted evidence fails explicitly instead of being treated as not applicable. The report treats missing or invalid ledger, interaction summary, text-visibility summary, and OCR summary files as named readiness blockers.
 
 ### `visual_region_manifest.js`
 

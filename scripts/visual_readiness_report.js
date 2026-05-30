@@ -79,6 +79,7 @@ function optionalEvidencePaths(options) {
   return [
     ["ledger", options.ledger],
     ["interaction-summary", options.interactionSummary],
+    ["text-visibility-summary", options.textVisibilitySummary],
     ["ocr-summary", options.ocrSummary],
   ].filter(([, filePath]) => Boolean(filePath));
 }
@@ -254,6 +255,9 @@ function buildReadinessReport(options) {
   if (options.requireInteractions) {
     checks.push(checkRequiredPath("required-interactions", "interaction summary", options.interactionSummary));
   }
+  if (options.requireTextVisibility) {
+    checks.push(checkRequiredPath("required-text-visibility", "text visibility summary", options.textVisibilitySummary));
+  }
   if (options.requireOcr) {
     checks.push(checkRequiredPath("required-ocr", "OCR summary", options.ocrSummary));
   }
@@ -262,6 +266,9 @@ function buildReadinessReport(options) {
   }
   if (options.interactionSummary) {
     checks.push(checkSummaryJson("interaction-summary", options.interactionSummary));
+  }
+  if (options.textVisibilitySummary) {
+    checks.push(checkSummaryJson("text-visibility-summary", options.textVisibilitySummary));
   }
   if (options.ocrSummary) {
     checks.push(checkSummaryJson("ocr-summary", options.ocrSummary));
@@ -290,11 +297,13 @@ function main() {
     minMtime: args["min-mtime"] || null,
     ledger: args.ledger || null,
     interactionSummary: args["interaction-summary"] || null,
+    textVisibilitySummary: args["text-visibility-summary"] || null,
     ocrSummary: args["ocr-summary"] || null,
     maxUiMismatch: parseOptionalNumber(args["max-ui-mismatch"], "max-ui-mismatch"),
     maxFullMismatch: parseOptionalNumber(args["max-full-mismatch"], "max-full-mismatch"),
     requireLedger: Boolean(args["require-ledger"]),
     requireInteractions: Boolean(args["require-interactions"]),
+    requireTextVisibility: Boolean(args["require-text-visibility"]),
     requireOcr: Boolean(args["require-ocr"]),
     requireRegions: Boolean(args["require-regions"]),
   });

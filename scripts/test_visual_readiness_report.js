@@ -66,6 +66,8 @@ function runReadiness(script, paths) {
     paths.ledger,
     "--interaction-summary",
     paths.interactionSummary,
+    "--text-visibility-summary",
+    paths.textVisibilitySummary,
     "--ocr-summary",
     paths.ocrSummary,
     "--max-ui-mismatch",
@@ -93,6 +95,7 @@ const paths = {
   score: path.join(tmp, "score.json"),
   ledger: path.join(tmp, "visual-workflow-ledger.md"),
   interactionSummary: path.join(tmp, "interaction-summary.json"),
+  textVisibilitySummary: path.join(tmp, "text-visibility-summary.json"),
   ocrSummary: path.join(tmp, "ocr-summary.json"),
 };
 
@@ -105,6 +108,7 @@ for (const filePath of [paths.reference, paths.candidate, paths.diff, paths.sour
 }
 writeLedger(paths.ledger);
 fs.writeFileSync(paths.interactionSummary, JSON.stringify({ ok: true, passed: 3, failed: 0 }, null, 2));
+fs.writeFileSync(paths.textVisibilitySummary, JSON.stringify({ ok: true, passed: 2, failed: 0 }, null, 2));
 fs.writeFileSync(paths.ocrSummary, JSON.stringify({ ok: true, similarity: 0.93 }, null, 2));
 writeScore(paths.score, paths);
 
@@ -116,6 +120,7 @@ for (const filePath of [
   paths.score,
   paths.ledger,
   paths.interactionSummary,
+  paths.textVisibilitySummary,
   paths.ocrSummary,
 ]) {
   touch(filePath, freshTime);
@@ -136,6 +141,7 @@ assert.deepEqual(
     "threshold",
     "ledger",
     "interaction-summary",
+    "text-visibility-summary",
     "ocr-summary",
     "region-diagnostics",
   ],
@@ -174,6 +180,32 @@ const missingInteraction = runReadinessArgs(script, [
 ]);
 assert.notEqual(missingInteraction.status, 0);
 assert.match(missingInteraction.stderr, /required-interactions/i);
+
+const missingTextVisibility = runReadinessArgs(script, [
+  "--score",
+  paths.score,
+  "--newer-than",
+  paths.source,
+  "--max-ui-mismatch",
+  "3",
+  "--require-text-visibility",
+]);
+assert.notEqual(missingTextVisibility.status, 0);
+assert.match(missingTextVisibility.stderr, /required-text-visibility/i);
+
+fs.writeFileSync(paths.textVisibilitySummary, JSON.stringify({ ok: false, failed: 1 }, null, 2));
+touch(paths.textVisibilitySummary, freshTime);
+const failedTextVisibility = runReadiness(script, paths);
+assert.notEqual(failedTextVisibility.status, 0);
+assert.match(failedTextVisibility.stderr, /text-visibility-summary/i);
+
+fs.writeFileSync(paths.textVisibilitySummary, JSON.stringify({ ok: true, passed: 2, failed: 0 }, null, 2));
+touch(paths.textVisibilitySummary, staleTime);
+const staleTextVisibility = runReadiness(script, paths);
+assert.notEqual(staleTextVisibility.status, 0);
+assert.match(staleTextVisibility.stderr, /evidence-freshness/i);
+assert.match(staleTextVisibility.stderr, /text-visibility-summary/i);
+touch(paths.textVisibilitySummary, freshTime);
 
 const noRegionScore = path.join(tmp, "score-no-regions.json");
 fs.writeFileSync(noRegionScore, JSON.stringify({
