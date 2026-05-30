@@ -52,6 +52,14 @@ function parseThreshold(value) {
   return parsed;
 }
 
+function parseFiniteNumber(value, name) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${name} must be a finite number`);
+  }
+  return parsed;
+}
+
 function targetToUrl(target) {
   if (/^https?:\/\//i.test(target) || /^file:\/\//i.test(target)) {
     return target;
@@ -95,6 +103,128 @@ async function normalizePng(input, width, height) {
   return PNG.sync.read(buffer);
 }
 
+async function readImageSize(input) {
+  const metadata = await sharp(input).metadata();
+  if (!metadata.width || !metadata.height) {
+    throw new Error(`Unable to read image dimensions for ${input}`);
+  }
+  return { width: metadata.width, height: metadata.height };
+}
+
+async function validateImageDimensions(reference, candidate, width, height) {
+  const [referenceSize, candidateSize] = await Promise.all([
+    readImageSize(reference),
+    readImageSize(candidate),
+  ]);
+  const requestedSize = `${width}x${height}`;
+  const referenceLabel = `${referenceSize.width}x${referenceSize.height}`;
+  const candidateLabel = `${candidateSize.width}x${candidateSize.height}`;
+  if (referenceSize.width !== candidateSize.width || referenceSize.height !== candidateSize.height) {
+    throw new Error(`Image dimensions must match before scoring: reference is ${referenceLabel}, candidate is ${candidateLabel}, requested viewport is ${requestedSize}`);
+  }
+  if (referenceSize.width !== width || referenceSize.height !== height) {
+    throw new Error(`Image dimensions must match requested viewport before scoring: images are ${referenceLabel}, requested viewport is ${requestedSize}`);
+  }
+  return {
+    dimensionsMatch: true,
+    reference: referenceSize,
+    candidate: candidateSize,
+    requested: { width, height },
+  };
+}
+
+function readMaskManifest(maskManifestPath) {
+  if (!maskManifestPath) {
+    return [];
+  }
+  const manifest = JSON.parse(fs.readFileSync(path.resolve(maskManifestPath), "utf8"));
+  if (Array.isArray(manifest)) {
+    return manifest;
+  }
+  if (manifest && Array.isArray(manifest.masks)) {
+    return manifest.masks;
+  }
+  throw new Error("--mask-manifest must be a JSON array or an object with a masks array");
+}
+
+function normalizeMaskManifest(maskManifestPath, width, height) {
+  const masks = readMaskManifest(maskManifestPath);
+  const occupiedPixels = new Set();
+  const normalized = masks.map((mask, index) => {
+    if (!mask || typeof mask !== "object") {
+      throw new Error(`Mask ${index + 1} must be an object`);
+    }
+    const id = mask.id ? String(mask.id) : `mask-${index + 1}`;
+    const x = parseFiniteNumber(mask.x, `mask ${id} x`);
+    const y = parseFiniteNumber(mask.y, `mask ${id} y`);
+    const maskWidth = parseFiniteNumber(mask.width, `mask ${id} width`);
+    const maskHeight = parseFiniteNumber(mask.height, `mask ${id} height`);
+    if (x < 0 || y < 0) {
+      throw new Error(`Mask ${id} x and y must be non-negative`);
+    }
+    if (maskWidth <= 0 || maskHeight <= 0) {
+      throw new Error(`Mask ${id} width and height must be positive`);
+    }
+    if (x + maskWidth > width || y + maskHeight > height) {
+      throw new Error(`Mask ${id} must stay within image bounds ${width}x${height}`);
+    }
+    const left = Math.floor(x);
+    const top = Math.floor(y);
+    const right = Math.ceil(x + maskWidth);
+    const bottom = Math.ceil(y + maskHeight);
+    const pixelKeys = [];
+    for (let row = top; row < bottom; row += 1) {
+      for (let column = left; column < right; column += 1) {
+        const key = `${column},${row}`;
+        if (occupiedPixels.has(key) && !mask.allowOverlap) {
+          throw new Error(`Mask ${id} overlaps another mask; set allowOverlap when intentional`);
+        }
+        pixelKeys.push(key);
+      }
+    }
+    for (const key of pixelKeys) {
+      occupiedPixels.add(key);
+    }
+    return {
+      id,
+      x,
+      y,
+      width: maskWidth,
+      height: maskHeight,
+      pixelBounds: { left, top, right, bottom },
+      pixels: pixelKeys.length,
+      reason: mask.reason ? String(mask.reason) : null,
+    };
+  });
+  return {
+    masks: normalized,
+    maskedPixelKeys: occupiedPixels,
+    maskedPixelCount: occupiedPixels.size,
+    maskedPixelRatio: Number((occupiedPixels.size / (width * height)).toFixed(4)),
+  };
+}
+
+function copyReferencePixelsIntoMaskedRegions(referencePng, candidatePng, masks, width) {
+  const maskedCandidateData = Buffer.from(candidatePng.data);
+  for (const mask of masks) {
+    const bounds = mask.pixelBounds;
+    for (let row = bounds.top; row < bounds.bottom; row += 1) {
+      for (let column = bounds.left; column < bounds.right; column += 1) {
+        const offset = ((row * width) + column) * 4;
+        maskedCandidateData[offset] = referencePng.data[offset];
+        maskedCandidateData[offset + 1] = referencePng.data[offset + 1];
+        maskedCandidateData[offset + 2] = referencePng.data[offset + 2];
+        maskedCandidateData[offset + 3] = referencePng.data[offset + 3];
+      }
+    }
+  }
+  return maskedCandidateData;
+}
+
+function percentOfTotal(pixels, totalPixels) {
+  return Number(((pixels / totalPixels) * 100).toFixed(2));
+}
+
 async function compareImages(options) {
   const reference = path.resolve(options.reference);
   const candidate = path.resolve(options.candidate);
@@ -102,6 +232,8 @@ async function compareImages(options) {
   const width = options.width;
   const height = options.height;
 
+  const dimensionSanity = await validateImageDimensions(reference, candidate, width, height);
+  const maskSanity = normalizeMaskManifest(options.maskManifest, width, height);
   const referencePng = await normalizePng(reference, width, height);
   const candidatePng = await normalizePng(candidate, width, height);
   const diffPng = new PNG({ width, height });
@@ -118,6 +250,27 @@ async function compareImages(options) {
   fs.writeFileSync(diff, PNG.sync.write(diffPng));
 
   const totalPixels = width * height;
+  let uiMaskedMismatchedPixels = mismatchedPixels;
+  if (maskSanity.masks.length) {
+    const maskedCandidateData = copyReferencePixelsIntoMaskedRegions(referencePng, candidatePng, maskSanity.masks, width);
+    const maskedDiffPng = new PNG({ width, height });
+    uiMaskedMismatchedPixels = pixelmatch(
+      referencePng.data,
+      maskedCandidateData,
+      maskedDiffPng.data,
+      width,
+      height,
+      { threshold: options.threshold }
+    );
+  }
+  const fullPageMismatch = percentOfTotal(mismatchedPixels, totalPixels);
+  const uiMaskedMismatch = percentOfTotal(uiMaskedMismatchedPixels, totalPixels);
+  const scoreInvariantOk = (
+    uiMaskedMismatch >= 0 &&
+    fullPageMismatch >= 0 &&
+    uiMaskedMismatch <= fullPageMismatch &&
+    fullPageMismatch <= 100
+  );
   return {
     reference,
     candidate,
@@ -127,7 +280,27 @@ async function compareImages(options) {
     threshold: options.threshold,
     mismatchedPixels,
     totalPixels,
-    mismatchPercent: Number(((mismatchedPixels / totalPixels) * 100).toFixed(2)),
+    mismatchPercent: fullPageMismatch,
+    fullPageMismatch,
+    uiMaskedMismatchedPixels,
+    uiMaskedMismatch,
+    sanity: {
+      dimensionsMatch: dimensionSanity.dimensionsMatch,
+      maskCount: maskSanity.masks.length,
+      maskedPixelCount: maskSanity.maskedPixelCount,
+      maskedPixelRatio: maskSanity.maskedPixelRatio,
+      masks: maskSanity.masks.map((mask) => ({
+        id: mask.id,
+        x: mask.x,
+        y: mask.y,
+        width: mask.width,
+        height: mask.height,
+        pixelBounds: mask.pixelBounds,
+        pixels: mask.pixels,
+        reason: mask.reason,
+      })),
+      scoreInvariantOk,
+    },
   };
 }
 
@@ -374,6 +547,7 @@ async function main() {
     width,
     height,
     threshold,
+    maskManifest: args["mask-manifest"],
   });
 
   if (rendered) {
@@ -400,14 +574,20 @@ async function main() {
 module.exports = {
   compareImages,
   compareDomDiagnostics,
+  copyReferencePixelsIntoMaskedRegions,
   inspectTarget,
+  normalizeMaskManifest,
   normalizePng,
   parseArgs,
+  parseFiniteNumber,
   parsePositiveInt,
   parseThreshold,
+  readImageSize,
+  readMaskManifest,
   renderTarget,
   textSimilarity,
   targetToUrl,
+  validateImageDimensions,
 };
 
 if (require.main === module) {
