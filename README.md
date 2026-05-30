@@ -93,6 +93,22 @@ For product development, that strict target is a release-polish or benchmark gat
 
 The workflow should keep visual comparison in the loop at each stage, but it should not force backend work to wait for a screenshot-perfect UI. Real data constraints should feed back into the UI while both tracks mature.
 
+## Page-Focused Refinement
+
+For multi-page apps, the default refinement loop should lock onto one active page, route, state, or flow segment. Do not jump among screens after every scoreboard refresh.
+
+Choose the active target from:
+
+1. The page or flow the user named.
+2. The page needed by the current vertical slice or release milestone.
+3. The page closest to the active fidelity gate when the goal is to finish one screen.
+4. The worst user-visible blocker when the goal is broad triage.
+5. A shared component or token pass only when the same root cause affects multiple pages.
+
+Stay on that target until its fidelity gate is met, it is explicitly blocked, three measured probes fail to improve it, a shared primitive needs a cross-page pass, the user changes priority, or backend/API/state work must happen first. Scoreboard refreshes are diagnostics; they do not reset the active-page lock.
+
+Each page-focused pass should keep a small ledger: active page, fidelity target, baseline/current/best score, top mismatch class, next local region, accepted patches, rejected regressions, and the switch or blocker reason when moving away.
+
 ## Source of Truth Ranking
 
 The skill ranks source material in this order:

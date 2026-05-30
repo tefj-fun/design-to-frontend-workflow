@@ -186,6 +186,38 @@ Do not apply the `<3%` target as a universal build-start gate. For product devel
 
 If the masked UI mismatch cannot be reduced below the active gate, document the blocking cause and evidence, such as unavailable source assets, unmasked raster differences, font rendering differences, antialiasing-only noise, real-data constraints, or a user-approved scope limit. When the user asks to optimize or match the benchmark, run additional targeted passes rather than stopping at the first plateau.
 
+#### Page Focus And Switching Rules
+
+Default to a page-focused loop, not scoreboard whack-a-mole. Before patching, choose one active page, route, state, or flow step using this priority:
+
+1. The page or flow the user named.
+2. The page needed by the current vertical slice or release milestone.
+3. The page closest to the active fidelity gate when the objective is to finish one screen.
+4. The worst user-visible blocker when the objective is broad triage.
+5. A shared component or token pass only when the same root cause affects multiple pages.
+
+After choosing the active page, keep working that page until one of these exit conditions is met:
+
+- The active fidelity target is met for that page.
+- The remaining mismatch is blocked by missing source assets, unavailable real data, unclear product requirements, or a user-approved scope limit.
+- Three consecutive measured probes or patches fail to improve the active page, and reclassification shows a different strategy is needed.
+- The top mismatch is a shared primitive, such as navigation, global font rendering, design tokens, icon set, or shell layout, whose fix should be applied across pages before returning to the active page.
+- The user changes priority.
+- The page depends on backend/API/state work that must be implemented before further visual tuning is meaningful.
+
+Do not switch pages merely because a refreshed scoreboard shows a different page with a worse or better score. A scoreboard refresh is diagnostic; it does not reset the active-page lock. When switching pages, state the exact reason, the evidence, and the previous page status.
+
+Maintain a page ledger during multi-page work:
+
+- Active page or state.
+- Fidelity gate and target score.
+- Baseline, current, and best-known `uiMaskedMismatch` and `fullPageMismatch`.
+- Top mismatch class and next local region.
+- Accepted visual patches, semantic-only patches, and rejected regressions.
+- Exit condition or blocker if moving to another page.
+
+For apps with multi-step workflows, focus on one flow segment at a time rather than jumping among unrelated screens. A flow segment can include multiple pages only when the user task depends on their continuity, such as onboarding step 1 -> step 2 -> success state.
+
 Before each loop iteration, classify the top mismatch region:
 
 1. Missing or wrong content, including icons and unmasked imagery.
@@ -294,6 +326,7 @@ When reporting results, include:
 - Stack/components touched or proposed.
 - Breakpoints checked.
 - Fidelity gate used: concept, structured handoff, vertical slice, release polish, benchmark, or pixel-critical component.
+- Active page/flow lock status, including switch reason if the active page changed.
 - Whether backend/API/data-model work can proceed in parallel, and which contracts or states are ready.
 - Screenshots or visual evidence when implementation occurred.
 - Latest `uiMaskedMismatch` percentage, `fullPageMismatch` percentage, and whether the active fidelity target was met.
@@ -319,5 +352,7 @@ Avoid these unless the user explicitly asks for a throwaway prototype:
 - Treating generated image text as reliable without extracting or checking it.
 - Treating `uiMaskedMismatch < 3%` as a prerequisite for backend, API, data model, or vertical-slice development.
 - Freezing backend contracts to a generated mockup before validating real data, states, permissions, and workflow constraints.
+- Jumping between pages after each scoreboard refresh without an active-page exit condition.
+- Optimizing broad multi-page scores before finishing or explicitly blocking the selected page/flow segment.
 - Claiming the frontend matches the mockup without rendering and comparing.
 - Letting a cheap/fast worker drive visual strategy decisions or approve visual acceptance without parent-side review.
