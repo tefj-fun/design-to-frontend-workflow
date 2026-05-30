@@ -223,9 +223,9 @@ When a structured reference is available, such as benchmark source HTML or an ap
 
 For screenshot-only work, these diagnostics are unavailable unless you first create a reliable structured handoff. Do not infer text/layout/color scores from pixelmatch alone.
 
-For text-heavy screenshots, DOM element boxes are not enough because paragraph elements can match while rendered line wrapping differs. When local OCR is available, run `scripts/visual_ocr_compare.js` on the actual reference and candidate PNGs to compare rendered text-line boxes:
+For text-heavy screenshots, DOM element boxes are not enough because paragraph elements can match while rendered line wrapping differs. Before OCR, run `scripts/visual_text_visibility_check.js --target <page> --manifest text-visibility.json` against the rendered DOM so hidden, clipped, covered, zero-sized, low-contrast, or wrong-line-count text is fixed before image-only diagnostics. When local OCR is available, run `scripts/visual_ocr_compare.js` on the actual reference and candidate PNGs to compare rendered text-line boxes:
 
-- Before OCR, run a text visibility audit in the rendered DOM: expected text exists, has nonzero client rects, is not hidden by `display`/`visibility`/`opacity`, is not clipped by overflow ancestors, is not covered at its center point by another element, has readable contrast, and has expected line-box count from `Range.getClientRects()` when practical.
+- Before OCR, run a text visibility audit in the rendered DOM with `scripts/visual_text_visibility_check.js`: expected text exists, has nonzero client rects, is not hidden by `display`/`visibility`/`opacity`, is not clipped by overflow ancestors, is not covered at its center point by another element, has readable contrast, and has expected line-box count from `Range.getClientRects()` when practical.
 - Use OCR to verify rendered line geometry after DOM visibility checks pass, or to diagnose screenshot-only references where DOM text cannot be matched directly.
 - Use OCR line diagnostics before accepting pixel-only improvements on text-heavy pages.
 - Treat missing reference lines, changed line wraps, or large line `dy` values as real visual mismatches even if pixelmatch improves.

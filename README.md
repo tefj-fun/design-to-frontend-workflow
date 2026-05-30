@@ -39,6 +39,7 @@ This skill makes the workflow explicit. It asks the agent to inventory the desig
 - `scripts/visual_region_manifest.js`: generates component-region crop manifests from rendered DOM selectors or visible text.
 - `scripts/visual_refine_loop.js`: bounded variant scoring for template-driven visual refinements.
 - `scripts/visual_local_search.js`: bounded local search over tunable implementation variables.
+- `scripts/visual_text_visibility_check.js`: DOM text visibility diagnostics for expected text before OCR.
 - `scripts/visual_ocr_compare.js`: OCR line-box diagnostics for text-heavy screenshots.
 - `scripts/visual_ocr_local_search.js`: OCR-aware local search when text wrapping matters.
 - `scripts/typography_probe.js`: extracts computed typography from structured references.
@@ -490,6 +491,35 @@ Use it for:
 
 Do not let the search invent arbitrary CSS.
 
+### `visual_text_visibility_check.js`
+
+Run DOM text visibility diagnostics before OCR or pixel-only text tuning:
+
+```bash
+node scripts/visual_text_visibility_check.js \
+  --target candidate.html \
+  --manifest text-visibility.json \
+  --output text-visibility-summary.json \
+  --width 1440 \
+  --height 900 \
+  --min-contrast 3
+```
+
+The manifest may be either an array or `{ "texts": [...] }`. Each text item needs an `id` and either a CSS `selector` or expected `text`; optional fields include `match`, `minContrast`, `expectedLineCount`, and `lineCount`.
+
+Example manifest:
+
+```json
+{
+  "texts": [
+    { "id": "page-title", "selector": "h1", "text": "Operations", "match": "contains", "minContrast": 4.5 },
+    { "id": "primary-cta", "text": "Create report", "match": "exact", "expectedLineCount": 1 }
+  ]
+}
+```
+
+The checker fails when expected text is missing, hidden by CSS, zero-sized, clipped by an overflow ancestor or the viewport, covered at its center point, below the contrast threshold, or rendered with an unexpected line-box count. Use the summary before OCR so blocked UI is fixed as a DOM/layout problem instead of being misclassified as an OCR or pixel-diff problem.
+
 ### `visual_ocr_compare.js`
 
 Use OCR diagnostics for text-heavy screenshots where DOM boxes are insufficient. It can catch:
@@ -499,7 +529,7 @@ Use OCR diagnostics for text-heavy screenshots where DOM boxes are insufficient.
 - line-top deltas
 - line width/height mismatch
 
-OCR should be used before accepting pixel-only improvements on text-heavy pages.
+OCR should be used after `scripts/visual_text_visibility_check.js --target candidate.html --manifest text-visibility.json` passes, and before accepting pixel-only improvements on text-heavy pages.
 
 ### `typography_probe.js`
 
