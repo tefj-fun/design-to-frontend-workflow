@@ -5,9 +5,13 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const skillPath = path.join(root, 'SKILL.md');
 const readmePath = path.join(root, 'README.md');
+const ledgerTemplatePath = path.join(root, 'templates', 'visual-workflow-ledger.md');
 
 const skill = fs.readFileSync(skillPath, 'utf8');
 const readme = fs.readFileSync(readmePath, 'utf8');
+const ledgerTemplate = fs.existsSync(ledgerTemplatePath)
+  ? fs.readFileSync(ledgerTemplatePath, 'utf8')
+  : '';
 
 const frontmatterMatch = skill.match(/^---\n([\s\S]*?)\n---/);
 assert(frontmatterMatch, 'SKILL.md must start with YAML frontmatter');
@@ -48,6 +52,7 @@ const requiredSkillSections = [
   'Before OCR, run a text visibility audit',
   'Shared primitive changes need a regression budget:',
   'Artifact ledger path or summary',
+  'templates/visual-workflow-ledger.md',
 ];
 
 for (const text of requiredSkillSections) {
@@ -59,10 +64,36 @@ const requiredReadmeSections = [
   '## Scoring And Triage Gates',
   '## Page-Focused Refinement',
   'Before implementing image-like regions, make an asset decision:',
+  'templates/visual-workflow-ledger.md',
 ];
 
 for (const text of requiredReadmeSections) {
   assert(readme.includes(text), `README.md missing required section: ${text}`);
+}
+
+assert(ledgerTemplate, 'templates/visual-workflow-ledger.md must exist');
+
+const requiredTemplateSections = [
+  '# Visual Workflow Ledger',
+  '## Source Of Truth',
+  '## Design-System Census',
+  '## Fidelity Gate',
+  '## Active Page Lock',
+  '## Scoring Harness Sanity',
+  '## First-Render Triage',
+  '## Asset Decisions',
+  '## Text Visibility And OCR',
+  '## Shared Primitive Regression Budget',
+  '## Artifact Ledger',
+  '## Checkpoints',
+  '## Final Verification',
+];
+
+for (const text of requiredTemplateSections) {
+  assert(
+    ledgerTemplate.includes(text),
+    `visual-workflow-ledger template missing section: ${text}`,
+  );
 }
 
 console.log('skill_content test passed');

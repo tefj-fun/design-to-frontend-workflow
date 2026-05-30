@@ -11,6 +11,8 @@ Use this skill to convert visual UI intent into maintainable frontend code witho
 
 Do not treat near-perfect visual parity as a prerequisite for all development work. Use visual fidelity as a staged quality gate: concept mockups establish direction, structured handoff enables frontend and backend work to begin, vertical slices validate real flows, and strict pixel targets are reserved for benchmark tasks, release polish, or explicitly pixel-critical components.
 
+For long-running, multi-page, benchmark, or release-polish work, copy `templates/visual-workflow-ledger.md` into the project or artifact folder and keep it updated as the control-plane record.
+
 For paper background and method mapping, read `references/paper-workflow-map.md` when the user asks why this workflow is valid or wants citations. Read `references/paper-methodology-notes.md` when the user asks whether the workflow is actually grounded in paper methodology, equations, objectives, rewards, or metrics. Read `references/benchmark-fixtures.md` when forward-testing the skill itself against public benchmark samples.
 
 ## Grounding Rules
@@ -288,6 +290,8 @@ Maintain a page ledger during multi-page work:
 - Shared primitive or page-local component status.
 - Accepted visual patches, semantic-only patches, scorer/capture fixes, and rejected regressions.
 - Exit condition or blocker if moving to another page.
+
+Use `templates/visual-workflow-ledger.md` as the default page ledger format when the task is long-running, multi-page, benchmark-driven, or likely to span context compaction.
 
 For apps with multi-step workflows, focus on one flow segment at a time rather than jumping among unrelated screens. A flow segment can include multiple pages only when the user task depends on their continuity, such as onboarding step 1 -> step 2 -> success state.
 
