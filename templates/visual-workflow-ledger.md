@@ -11,6 +11,16 @@ Use this ledger for multi-page visual implementation, benchmark matching, long-r
 - Viewports and states in scope:
 - Explicit exclusions:
 
+## Preflight
+
+- Preflight command:
+- Preflight summary path:
+- Playwright/browser available:
+- Target route renders:
+- Reference/candidate dimensions match:
+- OCR/Tesseract status:
+- Console/network issues:
+
 ## Design-System Census
 
 - Shared shell/layout:
@@ -29,6 +39,15 @@ Use this ledger for multi-page visual implementation, benchmark matching, long-r
 - Backend/API/data work allowed in parallel:
 - Hard blockers to visual work:
 
+## Development Readiness
+
+- Primary flows identified:
+- Entities and state model identified:
+- Routes and data contracts identified:
+- Seeded/mocked data available:
+- Visual uncertainty that does not block backend/API work:
+- Backend/API/data work started or deferred:
+
 ## Active Page Lock
 
 - Active page/route/state:
@@ -38,6 +57,13 @@ Use this ledger for multi-page visual implementation, benchmark matching, long-r
 - Best-known score:
 - Exit condition:
 - Switch reason, if changing pages:
+
+## Stop Budget
+
+- Current low-level probe count since last improvement:
+- Last improving probe and evidence:
+- Reclassification required after three non-improving probes:
+- Current blocker class:
 
 ## Scoring Harness Sanity
 

@@ -33,6 +33,7 @@ This skill makes the workflow explicit. It asks the agent to inventory the desig
 - `references/benchmark-fixtures.md`: notes for forward-testing against public benchmark samples.
 - `templates/visual-workflow-ledger.md`: reusable ledger for long-running multi-page visual work.
 - `scripts/visual_artifact_check.js`: validates score JSON, screenshot, and diff artifact existence and freshness.
+- `scripts/visual_preflight_check.js`: verifies local runtime, OCR, target rendering, and reference/candidate image setup before long visual loops.
 - `scripts/visual_readiness_report.js`: aggregates freshness, optional `evidence-freshness`, score sanity, ledger, interaction, text-visibility, OCR, and region evidence before reporting readiness.
 - `scripts/visual_workflow_fixture_check.js`: runs a representative end-to-end workflow fixture and verifies the full evidence chain.
 - `scripts/visual_compare.js`: screenshot rendering, pixel diffing, and optional structured diagnostics.
@@ -74,6 +75,21 @@ OCR diagnostics require a local `tesseract` executable:
 brew install tesseract
 ```
 
+## Preflight
+
+Run preflight before long-running visual loops so the agent does not spend hours tuning against broken tooling, route state, or image setup:
+
+```bash
+node scripts/visual_preflight_check.js \
+  --target http://localhost:3000/dashboard \
+  --reference reference.png \
+  --candidate candidate.png \
+  --require-tesseract \
+  --output preflight-summary.json
+```
+
+The summary reports required Node packages, optional Tesseract availability, optional target render health, console/network failures, and optional reference/candidate PNG dimension agreement. Fix preflight failures before visual search or CSS tuning.
+
 ## Core Workflow
 
 ```mermaid
@@ -102,6 +118,20 @@ For product development, that strict target is a release-polish or benchmark gat
 | Release polish | Key screens/components meet the agreed visual target, often `uiMaskedMismatch < 3%` | Tighten responsive states, local component regions, accessibility, and production readiness. |
 
 The workflow should keep visual comparison in the loop at each stage, but it should not force backend work to wait for a screenshot-perfect UI. Real data constraints should feed back into the UI while both tracks mature.
+
+## Development Readiness
+
+Development readiness is separate from visual readiness.
+
+Backend, API, data modeling, and vertical-slice work can begin once the structured handoff records:
+
+- primary user flows and states
+- entities, route boundaries, and data contracts
+- seeded or mocked data for the first vertical slice
+- source-of-truth and uncertainty notes
+- visual blockers that are release-polish issues rather than product-contract blockers
+
+Visual readiness is still required before claiming a screen match. It needs fresh render/capture artifacts, visual scores, text/OCR evidence where needed, interaction checks, and a passing readiness report for the active gate.
 
 ## Design-System Census
 
@@ -174,6 +204,12 @@ node scripts/visual_ledger_check.js \
 ```
 
 The checker fails when the active page or exit condition is blank, when the checkpoint table is malformed, or when checkpoints show page switching without a recorded switch reason.
+
+## Stop Budget
+
+Stop low-level visual tuning after three measured probes fail to improve the active gate. A measured probe is a concrete patch followed by fresh render/capture/compare evidence against the same page, viewport, and gate.
+
+When the stop budget is spent, do not keep trying random CSS combinations. Reclassify the blocker as scorer/capture, missing content, macro layout, shared primitive, text visibility, asset/raster, local component, or polish noise. Then fix the right layer, move to backend/API/state work if product structure is missing, or record a page-switch reason in the ledger.
 
 ## Source of Truth Ranking
 

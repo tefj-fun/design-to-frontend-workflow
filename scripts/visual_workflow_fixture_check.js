@@ -115,6 +115,7 @@ function writeFixtureFiles(workDir) {
     ocrSummary: path.join(workDir, "ocr-summary.json"),
     interactions: path.join(workDir, "interactions.json"),
     interactionSummary: path.join(workDir, "interaction-summary.json"),
+    preflightSummary: path.join(workDir, "preflight-summary.json"),
     ledger: path.join(workDir, "visual-workflow-ledger.md"),
     readinessSummary: path.join(workDir, "readiness-summary.json"),
   };
@@ -158,6 +159,16 @@ function writeFixtureFiles(workDir) {
     "- Viewports and states in scope: 640x360 default and modal state",
     "- Explicit exclusions: none",
     "",
+    "## Preflight",
+    "",
+    "- Preflight command: visual_preflight_check.js",
+    `- Preflight summary path: ${paths.preflightSummary}`,
+    "- Playwright/browser available: yes",
+    "- Target route renders: yes",
+    "- Reference/candidate dimensions match: yes",
+    "- OCR/Tesseract status: yes",
+    "- Console/network issues: none",
+    "",
     "## Design-System Census",
     "",
     "- Shared shell/layout: sidebar plus main dashboard content",
@@ -176,6 +187,15 @@ function writeFixtureFiles(workDir) {
     "- Backend/API/data work allowed in parallel: yes",
     "- Hard blockers to visual work: none",
     "",
+    "## Development Readiness",
+    "",
+    "- Primary flows identified: dashboard report flow",
+    "- Entities and state model identified: report modal state",
+    "- Routes and data contracts identified: static fixture contract",
+    "- Seeded/mocked data available: yes",
+    "- Visual uncertainty that does not block backend/API work: none",
+    "- Backend/API/data work started or deferred: not applicable fixture",
+    "",
     "## Active Page Lock",
     "",
     "- Active page/route/state: Dashboard default",
@@ -185,6 +205,13 @@ function writeFixtureFiles(workDir) {
     "- Best-known score: 0",
     "- Exit condition: readiness report passes",
     "- Switch reason, if changing pages:",
+    "",
+    "## Stop Budget",
+    "",
+    "- Current low-level probe count since last improvement: 0",
+    "- Last improving probe and evidence: fixture baseline",
+    "- Reclassification required after three non-improving probes: yes",
+    "- Current blocker class: none",
     "",
     "## Scoring Harness Sanity",
     "",
@@ -280,6 +307,7 @@ function buildWorkflowSummary(workDir, paths, summaries) {
     ocrSummary: paths.ocrSummary,
     interactions: paths.interactions,
     interactionSummary: paths.interactionSummary,
+    preflightSummary: paths.preflightSummary,
     ledger: paths.ledger,
     readinessSummary: paths.readinessSummary,
   };
@@ -302,6 +330,10 @@ function buildWorkflowSummary(workDir, paths, summaries) {
     visualCompare: {
       ok: summaries.score.sanity.dimensionsMatch === true && summaries.score.sanity.scoreInvariantOk === true,
       summary: summaries.score,
+    },
+    preflight: {
+      ok: summaries.preflight.ok === true,
+      summary: summaries.preflight,
     },
     textVisibility: {
       ok: summaries.textVisibility.ok === true,
@@ -380,6 +412,14 @@ function runWorkflowFixture(options) {
   ]);
   writeJson(paths.ocrSummary, ocr);
 
+  const preflight = runNode("visual_preflight_check.js", [
+    "--target", paths.candidateHtml,
+    "--reference", paths.referencePng,
+    "--candidate", paths.candidatePng,
+    "--require-tesseract",
+  ]);
+  writeJson(paths.preflightSummary, preflight);
+
   const interactions = runNode("visual_interaction_check.js", [
     "--target", paths.candidateHtml,
     "--manifest", paths.interactions,
@@ -406,6 +446,7 @@ function runWorkflowFixture(options) {
 
   const summary = buildWorkflowSummary(workDir, paths, {
     score,
+    preflight,
     textVisibility,
     ocr,
     interactions,

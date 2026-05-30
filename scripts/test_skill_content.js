@@ -53,17 +53,23 @@ for (const pattern of forbiddenWorkflowSummary) {
 }
 
 const requiredSkillSections = [
+  'Run preflight before long-running visual loops',
   '### 2. Run A Design-System Census Before Page Lock',
   '### 3. Set The Fidelity Gate And Development Track',
+  'Development readiness is separate from visual readiness',
   'Before trusting visual scores, run a scoring harness sanity gate:',
+  'Stop low-level visual tuning after three measured probes fail to improve the active gate',
   '#### First-Render Triage',
   '#### Page Focus And Switching Rules',
   'During long-running work, checkpoint after every full scoreboard refresh or every 60-90 minutes',
+  'fast subagent patch pass',
+  'parent/controller reviews the diff and reruns full-page plus local-region comparison',
   'Before OCR, run a text visibility audit',
   'references/visual-execution-guide.md',
   'Shared primitive changes need a regression budget:',
   'Artifact ledger path or summary',
   'templates/visual-workflow-ledger.md',
+  'scripts/visual_preflight_check.js',
   'pass `--region-manifest`',
   'scripts/visual_region_manifest.js',
   'scripts/visual_ledger_check.js',
@@ -88,10 +94,14 @@ for (const text of requiredSkillSections) {
 }
 
 const requiredReadmeSections = [
+  '## Preflight',
   '## Design-System Census',
+  '## Development Readiness',
+  '## Stop Budget',
   '## Scoring And Triage Gates',
   '## Page-Focused Refinement',
   'references/visual-execution-guide.md',
+  'scripts/visual_preflight_check.js',
   'Before implementing image-like regions, make an asset decision:',
   'templates/visual-workflow-ledger.md',
   '--region-manifest regions.json',
@@ -129,9 +139,12 @@ assert(executionGuide, 'references/visual-execution-guide.md must exist');
 const requiredTemplateSections = [
   '# Visual Workflow Ledger',
   '## Source Of Truth',
+  '## Preflight',
   '## Design-System Census',
   '## Fidelity Gate',
+  '## Development Readiness',
   '## Active Page Lock',
+  '## Stop Budget',
   '## Scoring Harness Sanity',
   '## First-Render Triage',
   '## Asset Decisions',
@@ -150,9 +163,14 @@ for (const text of requiredTemplateSections) {
 }
 
 const requiredExecutionGuideSections = [
+  'Run preflight before long-running visual loops',
+  'scripts/visual_preflight_check.js',
   'component-region manifest',
   'mask manifest',
   'icon manifest',
+  'Development readiness is separate from visual readiness',
+  'Stop low-level visual tuning after three measured probes fail to improve the active gate',
+  'fast subagent patch pass',
   'First-Render Triage',
   'Page Focus',
   'visual_text_visibility_check.js',

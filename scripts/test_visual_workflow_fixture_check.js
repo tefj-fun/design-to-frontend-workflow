@@ -30,6 +30,7 @@ assert.equal(writtenSummary.ok, true);
 
 for (const key of [
   "sourceOfTruth",
+  "preflight",
   "designSystemCensus",
   "renderCapture",
   "visualCompare",
@@ -58,6 +59,8 @@ for (const checkName of [
 }
 
 assert.equal(summary.evidence.visualCompare.summary.sanity.dimensionsMatch, true);
+assert.equal(summary.evidence.preflight.summary.ok, true);
+assert.equal(summary.evidence.preflight.summary.checks.some((check) => check.name === "image-dimensions"), true);
 assert.equal(summary.evidence.visualCompare.summary.sanity.scoreInvariantOk, true);
 assert.ok(summary.evidence.visualCompare.summary.regionMismatch.length >= 1);
 assert.equal(summary.evidence.textVisibility.summary.ok, true);

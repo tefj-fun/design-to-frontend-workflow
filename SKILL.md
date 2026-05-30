@@ -30,7 +30,7 @@ To validate this skill's local evidence chain, run `scripts/visual_workflow_fixt
 - Distinguish paper-supported steps from practical adaptations. Do not claim Codex is running a paper's trained model unless that model/tool is actually installed and used.
 - Treat Figma metadata as useful but risky: it improves visual grounding, but absolute coordinates and primitive style attributes can produce brittle code.
 - Treat visual similarity metrics as diagnostic signals, not proof of production readiness. Pair visual checks with code quality, responsiveness, accessibility, and interaction checks.
-- If the user is building a real app, separate design validation from product implementation. Start backend/API/data work once the structured handoff defines flows, entities, states, and contracts.
+- Development readiness is separate from visual readiness. If the user is building a real app, start backend/API/data work once the structured handoff defines flows, entities, states, contracts, seeded data, and known visual uncertainty.
 
 ## Core Workflow
 
@@ -72,6 +72,8 @@ Build real components, not one large HTML copy. Use semantic layout, responsive 
 
 ### 5. Render, Capture, Compare, Patch
 
+Run preflight before long-running visual loops: `scripts/visual_preflight_check.js --target <page> --reference reference.png --candidate candidate.png --require-tesseract --output preflight-summary.json`. Fix missing Playwright, browser, Tesseract, target-route, console/network, image-dimension, or artifact setup problems before CSS tuning.
+
 Default breakpoints: desktop `1440`, tablet `768`, mobile `390`. Capture reference and implementation at the same viewport, height, device scale, color scheme, locale, font state, animation state, route, and state.
 
 When available, use:
@@ -101,7 +103,11 @@ Classify the dominant mismatch before editing: `scorer-or-capture`, `missing-con
 
 #### Page Focus And Switching Rules
 
-Default to a page-focused loop. Pick one active page, route, state, or flow segment, then stay there until the fidelity gate is met, the page is blocked, three measured probes fail to improve it, a shared primitive needs cross-page review, the user changes priority, or backend/API/state work must happen first.
+Default to a page-focused loop. Pick one active page, route, state, or flow segment, then stay there until the fidelity gate is met, the page is blocked, a shared primitive needs cross-page review, the user changes priority, or backend/API/state work must happen first.
+
+Stop low-level visual tuning after three measured probes fail to improve the active gate. Reclassify the blocker, inspect preflight/scorer/text/asset causes, or switch only with a recorded reason.
+
+Use a fast subagent patch pass only for diagnosed 1-2 file mechanical changes such as padding, radius, icon gap, font-size, line-height, or local alignment. The parent/controller reviews the diff and reruns full-page plus local-region comparison before accepting the patch.
 
 During long-running work, checkpoint after every full scoreboard refresh or every 60-90 minutes. Use `templates/visual-workflow-ledger.md` and run `scripts/visual_ledger_check.js --ledger visual-workflow-ledger.md` after ledger updates and before switching active pages.
 
@@ -110,6 +116,7 @@ During long-running work, checkpoint after every full scoreboard refresh or ever
 A design-to-frontend pass is ready only when evidence matches the active fidelity gate:
 
 - Source-of-truth selection and uncertainty are recorded.
+- Preflight passes or blocking tool/capture issues are documented.
 - Design-system census exists for multi-screen work.
 - Component, text, token, asset, icon, mask, and region inventories exist where relevant.
 - Render/capture artifacts are fresh for the current code and route.
@@ -124,6 +131,7 @@ A design-to-frontend pass is ready only when evidence matches the active fidelit
 
 - One-shot image-to-code with no structured handoff.
 - Pixel-perfect blocking before structured handoff or vertical-slice work can begin.
+- Running hours of patch/search loops without preflight, stop budget, or blocker reclassification.
 - Tuning CSS against stale screenshots, mismatched viewports, invalid masks, or broken score invariants.
 - Running local search before content, layout, text visibility, and asset policy are under control.
 - Masking normal UI primitives, text, controls, cards, borders, or shadows.

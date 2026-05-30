@@ -13,6 +13,27 @@ Rank source material in this order: Figma file, Figma frame or structured spec, 
 - Responsive targets: desktop, tablet, mobile widths.
 - Known uncertainty: inferred text, hidden states, unavailable assets, unknown interactions.
 
+## Preflight
+
+Run preflight before long-running visual loops. Use `scripts/visual_preflight_check.js` before scoreboard-driven work, release-polish work, benchmark work, or any loop expected to take more than a few measured patches:
+
+```bash
+node scripts/visual_preflight_check.js \
+  --target http://localhost:3000/dashboard \
+  --reference reference.png \
+  --candidate candidate.png \
+  --require-tesseract \
+  --output preflight-summary.json
+```
+
+The preflight verifies the Node/runtime packages needed by the local harness, optional Tesseract availability, optional reference/candidate PNG dimensions, and optional target rendering with Playwright. Fix missing browser/runtime/OCR dependencies, route failures, console or network errors, or image dimension mismatches before tuning CSS.
+
+## Development Readiness
+
+Development readiness is separate from visual readiness. A product team can start backend/API/data work when the structured handoff defines primary flows, entities, states, routes, contracts, seeded or mocked data, and known visual uncertainty. Do not wait for release-polish pixel targets before building vertical slices.
+
+Visual readiness remains stricter: fresh screenshots, score sanity, masks/regions, text/OCR checks when needed, interaction validation, and a passing readiness report for the active fidelity gate.
+
 ## Component, Mask, Asset, And Icon Manifests
 
 Create a component-region manifest for high-signal repeated units: primary buttons, form controls, tabs, nav items, cards, table rows, badges, icons with labels, modals, list rows, and toolbar actions. Record id, selector or owner text, expected bounding box, crop padding, component state, viewport, and which text/icons/overlays are scored. Prefer source-derived boxes from Figma, benchmark DOM, or rendered element bounding boxes. If boxes are inferred from a screenshot, label them inferred and verify visually.
@@ -103,6 +124,12 @@ Default to a page-focused loop. Pick the active page by user priority, vertical-
 
 Stay on that target until its gate is met, it is explicitly blocked, three measured probes fail to improve it, a shared primitive needs cross-page review, the user changes priority, or backend/API/state work must happen first. Scoreboard refreshes are diagnostics; they do not reset the active-page lock.
 
+## Stop Budget
+
+Stop low-level visual tuning after three measured probes fail to improve the active gate. A measured probe is a patch plus fresh render/capture/compare evidence against the same gate. When the budget is spent, reclassify the blocker as scorer/capture, missing content, macro layout, shared primitive, text visibility, asset/raster, local component, or polish noise before editing again.
+
+If the blocker is tooling or source uncertainty, fix preflight, capture, reference material, or asset policy first. If the blocker is product/API/state readiness, move to the development track and return to visual polish after the state exists.
+
 Maintain `templates/visual-workflow-ledger.md` for long-running, multi-page, benchmark, or release-polish work. Checkpoint after each full scoreboard refresh or every 60-90 minutes. Run `scripts/visual_ledger_check.js --ledger visual-workflow-ledger.md` after ledger updates and before switching pages.
 
 ## Refinement And Local Search
@@ -120,6 +147,8 @@ Use `scripts/visual_refine_loop.js` for bounded template-driven variants. Use `s
 For text-heavy screens, rerun `visual_ocr_compare.js`. If OCR diagnostics fail after pixel-only local search, use `scripts/visual_ocr_local_search.js` and report the tradeoff explicitly.
 
 Low-level subagent patch passes can help with mechanical CSS combinations when the spec is complete. Use fast models only for tightly scoped 1-2 file changes; use stronger models for integration, debugging, or architecture. Always review subagent patches against the source-of-truth evidence and rerun visual checks.
+
+Use a fast subagent patch pass only after the parent/controller has diagnosed the visual delta, selected the region, constrained the files, and named the tunables. The parent/controller reviews the diff and reruns full-page plus local-region comparison before accepting the patch.
 
 ## Final Readiness
 
