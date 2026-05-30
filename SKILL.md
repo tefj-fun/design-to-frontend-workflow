@@ -9,6 +9,8 @@ description: Use when turning screenshots, generated images, Figma mockups, visu
 
 Use this skill to convert visual UI intent into maintainable frontend code without relying on a one-shot screenshot-to-code prompt. Prefer structured design data, component decomposition, local rendering, visual comparison, and interaction checks.
 
+Do not treat near-perfect visual parity as a prerequisite for all development work. Use visual fidelity as a staged quality gate: concept mockups establish direction, structured handoff enables frontend and backend work to begin, vertical slices validate real flows, and strict pixel targets are reserved for benchmark tasks, release polish, or explicitly pixel-critical components.
+
 For paper background and method mapping, read `references/paper-workflow-map.md` when the user asks why this workflow is valid or wants citations. Read `references/paper-methodology-notes.md` when the user asks whether the workflow is actually grounded in paper methodology, equations, objectives, rewards, or metrics. Read `references/benchmark-fixtures.md` when forward-testing the skill itself against public benchmark samples.
 
 ## Grounding Rules
@@ -18,6 +20,7 @@ For paper background and method mapping, read `references/paper-workflow-map.md`
 - Treat visual similarity metrics as diagnostic signals, not proof of production readiness. Pair visual checks with code quality, responsiveness, and interaction checks.
 - If the user asks for citations, methodology, or equations, load the relevant reference file and cite the exact paper role used.
 - If the user asks to test whether the skill works, use a public benchmark fixture first, then a project-specific mockup.
+- If the user is building a real app, separate design validation from product implementation. A visual mismatch score can block release polish, but it should not block backend, API, data model, or vertical-slice work once the core workflow and data contract are clear.
 
 ## Workflow
 
@@ -68,7 +71,34 @@ Icons are first-class assets, not decorative afterthoughts. Before coding, build
 
 Stop and ask for missing source material only when the ambiguity would materially change the build, such as unknown product data, missing required assets, or unclear target stack.
 
-### 2. Generate Component-First Frontend
+### 2. Set The Fidelity Gate And Development Track
+
+Choose the right fidelity gate before implementation. Do not default every task to screenshot-perfect matching.
+
+| Stage | Visual bar | Development track |
+| --- | --- | --- |
+| Concept mockup | Directionally credible; exact text/assets may be inferred | Explore product direction, flow, tone, and major surfaces. Do not build backend against concept-only details. |
+| Structured handoff | Component/text/token/asset/state inventory exists; known uncertainty is explicit | Start frontend components, backend/API design, data modeling, and mocked or seeded vertical-slice work. |
+| Vertical slice | Core workflow is visually coherent; blocking overflow, hidden text, and missing primary controls are fixed | Build one real end-to-end path with real contracts, navigation, state, and interaction tests. |
+| Release polish | Key screens/components meet the agreed visual target, often `uiMaskedMismatch < 3%` for benchmark or pixel-critical work | Tighten local regions, responsive states, accessibility, edge cases, and production readiness. |
+
+Start backend, API, auth, persistence, and domain-model work after the structured handoff defines:
+
+- Primary user flows and workflow states.
+- Core entities, fields, and relationships.
+- API or server-action contracts needed by visible screens.
+- Empty, loading, error, permission, and success states.
+- Data constraints that could change layout, such as long names, missing images, pagination, filters, and role-specific controls.
+
+Use mocked or seeded data while real services are built. Feed backend constraints back into the UI instead of forcing the backend to match a pixel-perfect mockup that may not represent real data.
+
+Use visual comparison throughout the work:
+
+- At build start: catch obvious layout, component, text, and asset mismatches.
+- During vertical slices: verify the real flow still matches the intended UI structure.
+- Before release: run stricter full-page, masked, local-region, OCR, and interaction checks on the screens that matter.
+
+### 3. Generate Component-First Frontend
 
 Translate the design into the target app stack and local conventions. For React/Next.js work:
 
@@ -78,8 +108,9 @@ Translate the design into the target app stack and local conventions. For React/
 - Use the repo's existing component library, icons, tokens, and styling patterns.
 - Treat the visual design as a target, not as permission to bypass maintainability.
 - Convert absolute Figma positions into flex/grid/layout primitives unless the UI element is inherently fixed-format, such as a map overlay, chart canvas, or design preview.
+- Preserve real backend/data boundaries instead of baking mockup values into components. Visual fixtures are useful for screenshots, but production components should accept realistic data and states.
 
-### 3. Render And Capture
+### 4. Render And Capture
 
 Run the frontend locally and capture screenshots at the agreed breakpoints. Default breakpoints:
 
@@ -137,7 +168,7 @@ For text-heavy screenshots, DOM element boxes are not enough because paragraph e
 - Use DOM diagnostics for component/block geometry and OCR diagnostics for rendered text-line geometry.
 - Use a stricter `--min-similarity` such as `0.85` when validating final text-line wrapping; lower values are useful during exploration but can hide partial-line matches.
 
-### 4. Compare Visually And Patch
+### 5. Compare Visually And Patch
 
 Compare reference versus rendered implementation. Prioritize fixes in this order:
 
@@ -147,9 +178,13 @@ Compare reference versus rendered implementation. Prioritize fixes in this order
 4. Typography scale and line wrapping.
 5. Color, spacing, borders, shadows, and polish.
 
-Patch the implementation, rerender, and repeat until the largest mismatches are resolved. Do not claim visual parity without fresh screenshot evidence.
+Patch the implementation, rerender, and repeat until the largest mismatches for the current fidelity gate are resolved. Do not claim visual parity without fresh screenshot evidence.
 
-Default acceptance target: continue the render-compare-patch loop until `uiMaskedMismatch` is below `3%` at the primary reference viewport. If there are no approved image-like masks, `uiMaskedMismatch` is the same as global full-page pixel mismatch. Do not stop above `3%` just because the structure looks right. If the masked UI mismatch cannot be reduced below `3%`, document the blocking cause and evidence, such as unavailable source assets, unmasked raster differences, font rendering differences, antialiasing-only noise, or a user-approved scope limit. When the user asks to optimize or match the benchmark, run additional targeted passes rather than stopping at the first plateau.
+Default release-polish and benchmark target: continue the render-compare-patch loop until `uiMaskedMismatch` is below `3%` at the primary reference viewport. If there are no approved image-like masks, `uiMaskedMismatch` is the same as global full-page pixel mismatch. Do not stop above `3%` just because the structure looks right when the user explicitly asked to match a benchmark or reach pixel parity.
+
+Do not apply the `<3%` target as a universal build-start gate. For product development, proceed from structured handoff into vertical-slice work once the component inventory, data contract, and primary states are clear. Keep reporting visual scores, but reserve hard visual blocking for release polish, user-approved critical screens, or defects that make the UI unusable, such as hidden text, blocked controls, severe overflow, missing primary actions, or inaccessible states.
+
+If the masked UI mismatch cannot be reduced below the active gate, document the blocking cause and evidence, such as unavailable source assets, unmasked raster differences, font rendering differences, antialiasing-only noise, real-data constraints, or a user-approved scope limit. When the user asks to optimize or match the benchmark, run additional targeted passes rather than stopping at the first plateau.
 
 Before each loop iteration, classify the top mismatch region:
 
@@ -238,7 +273,7 @@ When using automated or manual visual diffing, write the observed deltas in impl
 - "Hero image missing; source asset unavailable" instead of "image differs."
 - "Text score is 1.0; remaining error is layout/color/pixel antialiasing" instead of "the implementation is wrong."
 
-### 5. Validate Interactions
+### 6. Validate Interactions
 
 After static visual matching, verify interactive states:
 
@@ -258,8 +293,10 @@ When reporting results, include:
 - Evidence level: `verified from source`, `inferred from image`, or `not yet checked`.
 - Stack/components touched or proposed.
 - Breakpoints checked.
+- Fidelity gate used: concept, structured handoff, vertical slice, release polish, benchmark, or pixel-critical component.
+- Whether backend/API/data-model work can proceed in parallel, and which contracts or states are ready.
 - Screenshots or visual evidence when implementation occurred.
-- Latest `uiMaskedMismatch` percentage, `fullPageMismatch` percentage, and whether the `<3%` masked UI acceptance target was met.
+- Latest `uiMaskedMismatch` percentage, `fullPageMismatch` percentage, and whether the active fidelity target was met.
 - Subagent patch status (not used, in progress, pending review, accepted, or blocked/re-dispatched).
 - Component-region manifest status: not needed, source-derived, DOM-derived, screenshot-inferred, or not yet checked.
 - Latest important `regionMismatch[]`, `regionGeometry[]`, or `localCropMismatch` results when component-local comparison was used.
@@ -280,5 +317,7 @@ Avoid these unless the user explicitly asks for a throwaway prototype:
 - Replacing full-page comparison with isolated component crops, causing locally matched controls to drift from the surrounding layout.
 - Ignoring responsive behavior because the desktop screenshot looks close.
 - Treating generated image text as reliable without extracting or checking it.
+- Treating `uiMaskedMismatch < 3%` as a prerequisite for backend, API, data model, or vertical-slice development.
+- Freezing backend contracts to a generated mockup before validating real data, states, permissions, and workflow constraints.
 - Claiming the frontend matches the mockup without rendering and comparing.
 - Letting a cheap/fast worker drive visual strategy decisions or approve visual acceptance without parent-side review.

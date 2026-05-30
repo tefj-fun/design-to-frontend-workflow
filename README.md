@@ -10,6 +10,8 @@ source design -> structured handoff -> component-first implementation -> local r
 
 The skill is not a screenshot-to-code shortcut. It is a repeatable engineering workflow for React, Next.js, Tailwind, HTML/CSS, Figma-to-code, screenshot-to-code, image-to-HTML, and design QA tasks where visual fidelity matters but maintainability still matters.
 
+It also does not require near-perfect visual fidelity before development can start. Use generated mockups and screenshots as visual intent, then move quickly into a structured handoff, real component boundaries, data contracts, backend/API work, and vertical slices. Strict pixel targets belong at benchmark, release-polish, or pixel-critical component gates.
+
 ## Why This Exists
 
 One-shot screenshot-to-code prompts usually fail in predictable ways:
@@ -76,7 +78,20 @@ flowchart LR
   E --> G["7. Validate interactions<br/>states, routes, hover, focus, mobile"]
 ```
 
-The loop continues until the important mismatches are resolved. The default target is `uiMaskedMismatch < 3%` at the primary viewport. If that target cannot be reached, the agent must document the blocker with evidence.
+The loop continues until the important mismatches for the active fidelity gate are resolved. For benchmark or release-polish work, the default target is `uiMaskedMismatch < 3%` at the primary viewport. If that target cannot be reached, the agent must document the blocker with evidence.
+
+For product development, that strict target is a release-polish or benchmark gate, not a build-start gate. Backend, API, data modeling, and vertical-slice work can begin once the structured handoff defines the primary flows, entities, states, and data contracts.
+
+## Progressive Fidelity Gates
+
+| Stage | Visual bar | Engineering track |
+| --- | --- | --- |
+| Concept mockup | Directionally credible; text/assets may be inferred | Explore product direction, workflow, tone, and main surfaces. |
+| Structured handoff | Component, text, token, asset, state, and uncertainty inventories exist | Start frontend components, backend/API design, data modeling, and seeded or mocked workflows. |
+| Vertical slice | Core flow is coherent; blocked controls, hidden text, and severe overflow are fixed | Build one real end-to-end path with real contracts, state, navigation, and interaction tests. |
+| Release polish | Key screens/components meet the agreed visual target, often `uiMaskedMismatch < 3%` | Tighten responsive states, local component regions, accessibility, and production readiness. |
+
+The workflow should keep visual comparison in the loop at each stage, but it should not force backend work to wait for a screenshot-perfect UI. Real data constraints should feed back into the UI while both tracks mature.
 
 ## Source of Truth Ranking
 
@@ -398,4 +413,3 @@ Avoid these unless the user explicitly wants a throwaway prototype:
 ## Repository Status
 
 This is a workflow skill and utility harness, not a framework. The scripts are intentionally small and inspectable so agents can adapt them to the target app without hiding the decision-making behind an opaque optimizer.
-
