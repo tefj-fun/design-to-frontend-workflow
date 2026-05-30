@@ -171,6 +171,7 @@ Before trusting visual scores, run a scoring harness sanity gate:
 - Reference and candidate screenshots use the same viewport, height, device scale factor, color scheme, locale, font loading state, animation state, and route/state.
 - Reference and candidate image dimensions match exactly; if they do not, fix capture setup before scoring.
 - Screenshots and diff artifacts are fresh for the current code and route, not reused from an older patch or viewport.
+- When score JSON is saved, run `scripts/visual_artifact_check.js --score score.json --newer-than <changed-source-or-reference>` before reporting scores from that artifact.
 - Mask boxes are within image bounds, non-overlapping unless intentionally layered, and cover only approved image-like regions from the mask manifest.
 - Approved masks report masked-pixel ratio and per-mask geometry; unexpectedly large masks require review before accepting the score.
 - Score invariants hold: `0 <= uiMaskedMismatch <= fullPageMismatch <= 100`, no negative mismatches, no impossible percentages, and no score derived from diff-image alpha subtraction unless that method has been separately verified against per-mask crop scoring.

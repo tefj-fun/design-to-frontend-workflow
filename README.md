@@ -31,6 +31,7 @@ This skill makes the workflow explicit. It asks the agent to inventory the desig
 - `references/paper-workflow-map.md`: practical mapping from research ideas to this workflow.
 - `references/benchmark-fixtures.md`: notes for forward-testing against public benchmark samples.
 - `templates/visual-workflow-ledger.md`: reusable ledger for long-running multi-page visual work.
+- `scripts/visual_artifact_check.js`: validates score JSON, screenshot, and diff artifact existence and freshness.
 - `scripts/visual_compare.js`: screenshot rendering, pixel diffing, and optional structured diagnostics.
 - `scripts/visual_interaction_check.js`: validates hover, focus, click, modal, route, and other interaction states from a manifest.
 - `scripts/visual_ledger_check.js`: validates page-lock and checkpoint discipline in visual workflow ledgers.
@@ -357,6 +358,18 @@ node scripts/visual_compare.js \
 The mask manifest may be either an array or `{ "masks": [...] }`; each mask needs `id`, `x`, `y`, `width`, and `height`. The region manifest may be either an array or `{ "regions": [...] }`; each region needs `id`, `x`, `y`, `width`, and `height`, with optional `role`, `state`, `selector`, and `viewport`.
 
 The JSON summary includes `fullPageMismatch`, `uiMaskedMismatch`, `regionMismatch[]`, `regionGeometry[]`, and `localCropMismatch` when the relevant manifests are supplied. Use the region fields to diagnose specific buttons, inputs, rows, cards, badges, or icon-label pairs after full-page content and layout are broadly correct.
+
+### `visual_artifact_check.js`
+
+Validate that saved score evidence is fresh before reporting visual results:
+
+```bash
+node scripts/visual_artifact_check.js \
+  --score score.json \
+  --newer-than src/App.tsx
+```
+
+The checker reads `score.json`, verifies referenced `reference`, `candidate`, `diff`, and `rendered` artifacts exist, and fails if any are older than the newest `--newer-than` file or optional `--min-mtime` timestamp.
 
 ### `visual_region_manifest.js`
 

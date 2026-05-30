@@ -57,6 +57,7 @@ const requiredSkillSections = [
   'scripts/visual_region_manifest.js',
   'scripts/visual_ledger_check.js',
   'scripts/visual_interaction_check.js',
+  'scripts/visual_artifact_check.js',
 ];
 
 for (const text of requiredSkillSections) {
@@ -74,8 +75,10 @@ const requiredReadmeSections = [
   'scripts/visual_region_manifest.js',
   'scripts/visual_ledger_check.js',
   'scripts/visual_interaction_check.js',
+  'scripts/visual_artifact_check.js',
   '--ledger visual-workflow-ledger.md',
   '--manifest interactions.json',
+  '--score score.json',
   '--source region-source.json',
   'The JSON summary includes `fullPageMismatch`, `uiMaskedMismatch`, `regionMismatch[]`, `regionGeometry[]`, and `localCropMismatch` when the relevant manifests are supplied.',
 ];
