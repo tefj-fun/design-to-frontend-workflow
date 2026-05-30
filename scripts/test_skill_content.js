@@ -70,6 +70,7 @@ const requiredSkillSections = [
   'scripts/visual_interaction_check.js',
   'scripts/visual_artifact_check.js',
   'scripts/visual_readiness_report.js',
+  'scripts/visual_workflow_fixture_check.js',
   'scripts/visual_text_visibility_check.js',
   '--manifest text-visibility.json',
   '--text-visibility-summary',
@@ -100,6 +101,7 @@ const requiredReadmeSections = [
   'scripts/visual_interaction_check.js',
   'scripts/visual_artifact_check.js',
   'scripts/visual_readiness_report.js',
+  'scripts/visual_workflow_fixture_check.js',
   'scripts/visual_text_visibility_check.js',
   '--manifest text-visibility.json',
   '--text-visibility-summary',
@@ -157,6 +159,7 @@ const requiredExecutionGuideSections = [
   'visual_ocr_compare.js',
   'visual_local_search.js',
   'visual_readiness_report.js',
+  'scripts/visual_workflow_fixture_check.js',
   'Benchmark Validation',
   'Output Report',
 ];

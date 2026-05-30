@@ -145,7 +145,9 @@ The report validates artifact freshness, optional `evidence-freshness`, score sa
 
 ## Benchmark Validation
 
-To validate the skill itself, use a public benchmark fixture before project-specific work. Prefer a source that provides reference screenshot plus source HTML or structured state, then run:
+To validate the skill itself, run `scripts/visual_workflow_fixture_check.js` first as a representative local smoke test. It creates a small structured UI target, renders/captures it, compares screenshots, generates component regions, checks text visibility, runs OCR, validates interaction state, and produces a strict readiness report.
+
+Then use a public benchmark fixture before project-specific work. Prefer a source that provides reference screenshot plus source HTML or structured state, then run:
 
 - source-of-truth ranking and structured handoff
 - design-system census for multi-screen sets

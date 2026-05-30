@@ -207,13 +207,15 @@ function compareImagesWithOcr(options) {
   const candidateTsv = runTesseract(options.candidate, options);
   const referenceLines = groupLines(wordsFromTsv(referenceTsv, options.minConfidence));
   const candidateLines = groupLines(wordsFromTsv(candidateTsv, options.minConfidence));
+  const lineComparison = compareOcrLines(referenceLines, candidateLines, options.minSimilarity);
   return {
+    ok: lineComparison.missingReferenceLines === 0 && lineComparison.missingCandidateLines === 0,
     reference: path.resolve(options.reference),
     candidate: path.resolve(options.candidate),
     psm: options.psm,
     minConfidence: options.minConfidence,
     minSimilarity: options.minSimilarity,
-    ...compareOcrLines(referenceLines, candidateLines, options.minSimilarity),
+    ...lineComparison,
   };
 }
 

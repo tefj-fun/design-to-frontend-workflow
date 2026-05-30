@@ -23,6 +23,8 @@ For paper background and method mapping, read `references/paper-workflow-map.md`
 | Public benchmark fixture guidance | `references/benchmark-fixtures.md` |
 | Long-running work ledger | `templates/visual-workflow-ledger.md` |
 
+To validate this skill's local evidence chain, run `scripts/visual_workflow_fixture_check.js` before project-specific benchmark work.
+
 ## Grounding Rules
 
 - Distinguish paper-supported steps from practical adaptations. Do not claim Codex is running a paper's trained model unless that model/tool is actually installed and used.

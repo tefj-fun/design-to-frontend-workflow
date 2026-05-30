@@ -34,6 +34,7 @@ This skill makes the workflow explicit. It asks the agent to inventory the desig
 - `templates/visual-workflow-ledger.md`: reusable ledger for long-running multi-page visual work.
 - `scripts/visual_artifact_check.js`: validates score JSON, screenshot, and diff artifact existence and freshness.
 - `scripts/visual_readiness_report.js`: aggregates freshness, optional `evidence-freshness`, score sanity, ledger, interaction, text-visibility, OCR, and region evidence before reporting readiness.
+- `scripts/visual_workflow_fixture_check.js`: runs a representative end-to-end workflow fixture and verifies the full evidence chain.
 - `scripts/visual_compare.js`: screenshot rendering, pixel diffing, and optional structured diagnostics.
 - `scripts/visual_interaction_check.js`: validates hover, focus, click, modal, route, and other interaction states from a manifest.
 - `scripts/visual_ledger_check.js`: validates page-lock and checkpoint discipline in visual workflow ledgers.

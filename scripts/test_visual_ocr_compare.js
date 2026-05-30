@@ -65,6 +65,7 @@ const result = spawnSync(process.execPath, [
 
 assert.equal(result.status, 0, result.stderr || result.stdout);
 const summary = JSON.parse(result.stdout);
+assert.equal(summary.ok, true);
 assert.equal(summary.matchedLines, 1);
 assert.equal(summary.missingReferenceLines, 0);
 assert.equal(summary.missingCandidateLines, 0);
