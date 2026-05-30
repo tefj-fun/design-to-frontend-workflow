@@ -70,12 +70,13 @@ brew install tesseract
 ```mermaid
 flowchart LR
   A["1. Source of truth<br/>Figma, screenshot, mockup"] --> B["2. Structured handoff<br/>components, text, tokens, assets"]
-  B --> C["3. Component-first frontend<br/>real components, responsive layout"]
-  C --> D["4. Render locally<br/>desktop, tablet, mobile"]
-  D --> E["5. Compare visually<br/>full page, masks, regions, OCR"]
-  E --> F["6. Patch and rerender<br/>concrete deltas only"]
-  F --> E
-  E --> G["7. Validate interactions<br/>states, routes, hover, focus, mobile"]
+  B --> C["3. Design-system census<br/>shared tokens, components, templates"]
+  C --> D["4. Component-first frontend<br/>real primitives, responsive layout"]
+  D --> E["5. Render locally<br/>desktop, tablet, mobile"]
+  E --> F["6. Compare visually<br/>full page, masks, regions, OCR"]
+  F --> G["7. Patch and rerender<br/>concrete deltas only"]
+  G --> F
+  F --> H["8. Validate interactions<br/>states, routes, hover, focus, mobile"]
 ```
 
 The loop continues until the important mismatches for the active fidelity gate are resolved. For benchmark or release-polish work, the default target is `uiMaskedMismatch < 3%` at the primary viewport. If that target cannot be reached, the agent must document the blocker with evidence.
@@ -93,6 +94,22 @@ For product development, that strict target is a release-polish or benchmark gat
 
 The workflow should keep visual comparison in the loop at each stage, but it should not force backend work to wait for a screenshot-perfect UI. Real data constraints should feed back into the UI while both tracks mature.
 
+## Design-System Census
+
+Before page-focused optimization on a multi-screen app, inspect all provided screens once to extract the shared design system. This is a census, not a full optimization pass.
+
+Capture:
+
+- shared shell and layout: app frame, nav, headers, sidebars, grids, gutters, panels, and breakpoints
+- tokens: color roles, typography scale, line heights, spacing, radii, borders, shadows, focus rings, selected/disabled states
+- shared components: buttons, inputs, tabs, cards, badges, tables, list rows, filters, modals, empty/loading/error states
+- shared icon language: library/source, stroke width, filled versus outline style, semantic roles, icon-label patterns
+- page templates: dashboard, list/detail, map/list, wizard/onboarding, settings, analytics, table-heavy, card grid
+- asset policy: photos, maps, charts, avatars, generated illustrations, and exact versus representative pixels
+- exceptions: similar-looking components that should stay separate because behavior, data, or state differs
+
+Use the census to build or adjust only the stable primitives needed by the active page, vertical slice, or release target. Do not build a complete component library from speculative screenshots. After a shared primitive changes, run a small cross-page regression check on affected pages, then return to the active page lock.
+
 ## Page-Focused Refinement
 
 For multi-page apps, the default refinement loop should lock onto one active page, route, state, or flow segment. Do not jump among screens after every scoreboard refresh.
@@ -103,7 +120,7 @@ Choose the active target from:
 2. The page needed by the current vertical slice or release milestone.
 3. The page closest to the active fidelity gate when the goal is to finish one screen.
 4. The worst user-visible blocker when the goal is broad triage.
-5. A shared component or token pass only when the same root cause affects multiple pages.
+5. A shared component or token pass identified by the design-system census when the same root cause affects multiple pages.
 
 Stay on that target until its fidelity gate is met, it is explicitly blocked, three measured probes fail to improve it, a shared primitive needs a cross-page pass, the user changes priority, or backend/API/state work must happen first. Scoreboard refreshes are diagnostics; they do not reset the active-page lock.
 

@@ -71,7 +71,31 @@ Icons are first-class assets, not decorative afterthoughts. Before coding, build
 
 Stop and ask for missing source material only when the ambiguity would materially change the build, such as unknown product data, missing required assets, or unclear target stack.
 
-### 2. Set The Fidelity Gate And Development Track
+### 2. Run A Design-System Census Before Page Lock
+
+For multi-screen apps, inspect all provided pages once before choosing the active page for optimization. The goal is not to tune every page up front; the goal is to extract the shared design system so repeated UI is implemented consistently.
+
+Create a concise design-system census:
+
+- Shared shell and layout: app frame, navigation, header, sidebars, grid columns, page gutters, panels, and common responsive breakpoints.
+- Tokens: color roles, typography scale, line heights, spacing units, radii, borders, shadows, elevation, focus rings, and disabled/selected states.
+- Shared components: buttons, inputs, selects, tabs, cards, badges, tables, list rows, modals, toasts, filters, search fields, pagination, empty/loading/error states, and repeated toolbar actions.
+- Shared icon language: library/source, stroke width, filled versus outline style, semantic icon roles, and repeated icon-label patterns.
+- Page templates: dashboard, list/detail, map/list, wizard/onboarding, settings, analytics, table-heavy, card grid, and modal workflows.
+- Asset/raster policy: photos, maps, charts, avatars, screenshots, generated illustrations, and which regions require exact pixels versus representative content.
+- Exceptions: similar-looking elements that should remain separate because their behavior, state model, or data contract differs.
+
+Use the census to define implementation primitives before page-focused optimization:
+
+- Prefer existing repo components/tokens when they match the census.
+- Add or adjust shared primitives only when at least two pages share the same role or when the active page depends on that primitive.
+- Keep shared primitives state-aware and data-driven; do not bake in one screenshot's literal text, dimensions, or row count.
+- Do not overbuild a full component library from speculative screenshots. Build the stable subset needed for the active page, vertical slice, or release target, and record deferred primitives.
+- After changing a shared primitive, run a small cross-page regression check on every page that uses it before returning to the active page lock.
+
+The census should inform page selection. If one page depends on many unbuilt shared primitives, build those primitives first. If a page has unique raster-heavy content and few reusable components, do not let it dominate early design-system work.
+
+### 3. Set The Fidelity Gate And Development Track
 
 Choose the right fidelity gate before implementation. Do not default every task to screenshot-perfect matching.
 
@@ -98,7 +122,7 @@ Use visual comparison throughout the work:
 - During vertical slices: verify the real flow still matches the intended UI structure.
 - Before release: run stricter full-page, masked, local-region, OCR, and interaction checks on the screens that matter.
 
-### 3. Generate Component-First Frontend
+### 4. Generate Component-First Frontend
 
 Translate the design into the target app stack and local conventions. For React/Next.js work:
 
@@ -106,11 +130,12 @@ Translate the design into the target app stack and local conventions. For React/
 - Use semantic layout and responsive CSS rather than absolute-positioning the whole page.
 - Preserve real app data flow and state boundaries.
 - Use the repo's existing component library, icons, tokens, and styling patterns.
+- Use the design-system census to route repeated UI through shared primitives instead of page-local one-off CSS.
 - Treat the visual design as a target, not as permission to bypass maintainability.
 - Convert absolute Figma positions into flex/grid/layout primitives unless the UI element is inherently fixed-format, such as a map overlay, chart canvas, or design preview.
 - Preserve real backend/data boundaries instead of baking mockup values into components. Visual fixtures are useful for screenshots, but production components should accept realistic data and states.
 
-### 4. Render And Capture
+### 5. Render And Capture
 
 Run the frontend locally and capture screenshots at the agreed breakpoints. Default breakpoints:
 
@@ -168,7 +193,7 @@ For text-heavy screenshots, DOM element boxes are not enough because paragraph e
 - Use DOM diagnostics for component/block geometry and OCR diagnostics for rendered text-line geometry.
 - Use a stricter `--min-similarity` such as `0.85` when validating final text-line wrapping; lower values are useful during exploration but can hide partial-line matches.
 
-### 5. Compare Visually And Patch
+### 6. Compare Visually And Patch
 
 Compare reference versus rendered implementation. Prioritize fixes in this order:
 
@@ -194,14 +219,14 @@ Default to a page-focused loop, not scoreboard whack-a-mole. Before patching, ch
 2. The page needed by the current vertical slice or release milestone.
 3. The page closest to the active fidelity gate when the objective is to finish one screen.
 4. The worst user-visible blocker when the objective is broad triage.
-5. A shared component or token pass only when the same root cause affects multiple pages.
+5. A shared component or token pass identified by the design-system census when the same root cause affects multiple pages.
 
 After choosing the active page, keep working that page until one of these exit conditions is met:
 
 - The active fidelity target is met for that page.
 - The remaining mismatch is blocked by missing source assets, unavailable real data, unclear product requirements, or a user-approved scope limit.
 - Three consecutive measured probes or patches fail to improve the active page, and reclassification shows a different strategy is needed.
-- The top mismatch is a shared primitive, such as navigation, global font rendering, design tokens, icon set, or shell layout, whose fix should be applied across pages before returning to the active page.
+- The top mismatch is a shared primitive from the design-system census, such as navigation, global font rendering, design tokens, icon set, or shell layout, whose fix should be applied across pages before returning to the active page.
 - The user changes priority.
 - The page depends on backend/API/state work that must be implemented before further visual tuning is meaningful.
 
@@ -213,6 +238,7 @@ Maintain a page ledger during multi-page work:
 - Fidelity gate and target score.
 - Baseline, current, and best-known `uiMaskedMismatch` and `fullPageMismatch`.
 - Top mismatch class and next local region.
+- Shared primitive or page-local component status.
 - Accepted visual patches, semantic-only patches, and rejected regressions.
 - Exit condition or blocker if moving to another page.
 
@@ -305,7 +331,7 @@ When using automated or manual visual diffing, write the observed deltas in impl
 - "Hero image missing; source asset unavailable" instead of "image differs."
 - "Text score is 1.0; remaining error is layout/color/pixel antialiasing" instead of "the implementation is wrong."
 
-### 6. Validate Interactions
+### 7. Validate Interactions
 
 After static visual matching, verify interactive states:
 
@@ -325,6 +351,7 @@ When reporting results, include:
 - Evidence level: `verified from source`, `inferred from image`, or `not yet checked`.
 - Stack/components touched or proposed.
 - Breakpoints checked.
+- Design-system census status: not needed, complete, partial, or blocked; include shared primitives created or deferred.
 - Fidelity gate used: concept, structured handoff, vertical slice, release polish, benchmark, or pixel-critical component.
 - Active page/flow lock status, including switch reason if the active page changed.
 - Whether backend/API/data-model work can proceed in parallel, and which contracts or states are ready.
@@ -349,6 +376,8 @@ Avoid these unless the user explicitly asks for a throwaway prototype:
 - Masking text, controls, icons, borders, or layout errors as if they were raster image differences.
 - Replacing full-page comparison with isolated component crops, causing locally matched controls to drift from the surrounding layout.
 - Ignoring responsive behavior because the desktop screenshot looks close.
+- Building each page as isolated one-off CSS before inspecting all screens for shared tokens, templates, and components.
+- Overbuilding a complete component library from speculative screenshots before the active page or vertical slice proves the primitives are needed.
 - Treating generated image text as reliable without extracting or checking it.
 - Treating `uiMaskedMismatch < 3%` as a prerequisite for backend, API, data model, or vertical-slice development.
 - Freezing backend contracts to a generated mockup before validating real data, states, permissions, and workflow constraints.
