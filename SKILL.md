@@ -1,6 +1,6 @@
 ---
 name: design-to-frontend-workflow
-description: Use when turning screenshots, generated images, Figma mockups, visual design references, or UI screenshots into real frontend code. Guides Codex through a reusable design-to-code workflow using structured handoff, component extraction, local rendering, screenshot comparison, responsive checks, and interaction validation. Especially relevant for React/Next.js/Tailwind frontend work, Figma-to-code handoff, image-to-HTML questions, requests to make a frontend match a mockup, or methodology/equation questions about design-to-code papers such as Design2Code, Figma2Code, VisRefiner, UI2Code^N, and WebVIA.
+description: Use when turning screenshots, generated images, Figma mockups, UI screenshots, visual references, or design-system screen sets into frontend code; when matching a frontend to a mockup; or when answering methodology questions about Design2Code, Figma2Code, VisRefiner, UI2Code^N, WebVIA, visual fidelity metrics, OCR/text comparison, masks, component crops, or render-based UI verification.
 ---
 
 # Design To Frontend Workflow
