@@ -27,6 +27,7 @@ This skill makes the workflow explicit. It asks the agent to inventory the desig
 ## What Is Included
 
 - `SKILL.md`: the Codex skill entrypoint.
+- `references/visual-execution-guide.md`: detailed execution procedure for the render-compare-refine workflow.
 - `references/paper-methodology-notes.md`: paper-grounded methodology, objectives, rewards, and metric mapping.
 - `references/paper-workflow-map.md`: practical mapping from research ideas to this workflow.
 - `references/benchmark-fixtures.md`: notes for forward-testing against public benchmark samples.

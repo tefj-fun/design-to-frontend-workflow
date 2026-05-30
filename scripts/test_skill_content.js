@@ -6,12 +6,22 @@ const root = path.resolve(__dirname, '..');
 const skillPath = path.join(root, 'SKILL.md');
 const readmePath = path.join(root, 'README.md');
 const ledgerTemplatePath = path.join(root, 'templates', 'visual-workflow-ledger.md');
+const executionGuidePath = path.join(root, 'references', 'visual-execution-guide.md');
 
 const skill = fs.readFileSync(skillPath, 'utf8');
 const readme = fs.readFileSync(readmePath, 'utf8');
 const ledgerTemplate = fs.existsSync(ledgerTemplatePath)
   ? fs.readFileSync(ledgerTemplatePath, 'utf8')
   : '';
+const executionGuide = fs.existsSync(executionGuidePath)
+  ? fs.readFileSync(executionGuidePath, 'utf8')
+  : '';
+
+const skillLines = skill.split(/\r?\n/).length;
+assert(
+  skillLines <= 260,
+  `SKILL.md must stay under 260 lines for load efficiency; got ${skillLines}`,
+);
 
 const frontmatterMatch = skill.match(/^---\n([\s\S]*?)\n---/);
 assert(frontmatterMatch, 'SKILL.md must start with YAML frontmatter');
@@ -50,6 +60,7 @@ const requiredSkillSections = [
   '#### Page Focus And Switching Rules',
   'During long-running work, checkpoint after every full scoreboard refresh or every 60-90 minutes',
   'Before OCR, run a text visibility audit',
+  'references/visual-execution-guide.md',
   'Shared primitive changes need a regression budget:',
   'Artifact ledger path or summary',
   'templates/visual-workflow-ledger.md',
@@ -79,6 +90,7 @@ const requiredReadmeSections = [
   '## Design-System Census',
   '## Scoring And Triage Gates',
   '## Page-Focused Refinement',
+  'references/visual-execution-guide.md',
   'Before implementing image-like regions, make an asset decision:',
   'templates/visual-workflow-ledger.md',
   '--region-manifest regions.json',
@@ -110,6 +122,7 @@ for (const text of requiredReadmeSections) {
 }
 
 assert(ledgerTemplate, 'templates/visual-workflow-ledger.md must exist');
+assert(executionGuide, 'references/visual-execution-guide.md must exist');
 
 const requiredTemplateSections = [
   '# Visual Workflow Ledger',
@@ -131,6 +144,27 @@ for (const text of requiredTemplateSections) {
   assert(
     ledgerTemplate.includes(text),
     `visual-workflow-ledger template missing section: ${text}`,
+  );
+}
+
+const requiredExecutionGuideSections = [
+  'component-region manifest',
+  'mask manifest',
+  'icon manifest',
+  'First-Render Triage',
+  'Page Focus',
+  'visual_text_visibility_check.js',
+  'visual_ocr_compare.js',
+  'visual_local_search.js',
+  'visual_readiness_report.js',
+  'Benchmark Validation',
+  'Output Report',
+];
+
+for (const text of requiredExecutionGuideSections) {
+  assert(
+    executionGuide.includes(text),
+    `visual execution guide missing section: ${text}`,
   );
 }
 
